@@ -1,0 +1,13 @@
+# Deliberately VULNERABLE config sample for sec_scan.py - fake secrets.
+spring:
+  datasource:
+    url: jdbc:sqlserver://db01;databaseName=cargo
+    username: cargo_app
+    password: CargoProd2024
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+aws:
+  access-key-id: __FAKE_AWS_KEY_2__

@@ -1,0 +1,10 @@
+{
+  "name": "agentic-skill-kit-guard",
+  "version": "1.0.0",
+  "description": "Optional safety hooks: runs a local security/SQL scan after file edits and blocks git commits that contain likely secrets. No network access.",
+  "author": { "name": "Dipesh Pansuriya", "url": "https://github.com/DipeshPansuriya" },
+  "homepage": "https://github.com/DipeshPansuriya/agentic-skill-kit",
+  "repository": "https://github.com/DipeshPansuriya/agentic-skill-kit",
+  "license": "MIT",
+  "keywords": ["hooks", "security", "secrets", "guardrails"]
+}

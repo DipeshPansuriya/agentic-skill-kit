@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sample ACTUAL plan (fake data) for testing scripts/plan_analyzer.py.
+     Query: DXB station events since 1 Sep with shipper details; @station sent as NVARCHAR by the app
+     while awb_event.station is VARCHAR(3) -> CONVERT_IMPLICIT on the column, clustered index scan,
+     88x under-estimate, sort spill, 185k key lookups. -->
+<ShowPlanXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.564" Build="16.0.4135.4" xmlns="http://schemas.microsoft.com/sqlserver/2004/07/showplan">
+  <BatchSequence>
+    <Batch>
+      <Statements>
+        <StmtSimple StatementCompId="1" StatementEstRows="2100" StatementId="1" StatementOptmLevel="FULL" CardinalityEstimationModelVersion="160" StatementSubTreeCost="112.874" StatementText="SELECT e.awb_no, e.event_ts, e.status_code, s.shipper_name, s.gross_kg FROM dbo.awb_event AS e JOIN dbo.shipment AS s ON s.awb_no = e.awb_no WHERE e.station = @station AND e.event_ts &gt;= @from ORDER BY e.event_ts DESC" StatementType="SELECT" QueryHash="0x7A3F19C2D4E5B601" QueryPlanHash="0x1C84E0F2A9B37D55" RetrievedFromCache="true" SecurityPolicyApplied="false">
+          <StatementSetOptions ANSI_NULLS="true" ANSI_PADDING="true" ANSI_WARNINGS="true" ARITHABORT="false" CONCAT_NULL_YIELDS_NULL="true" NUMERIC_ROUNDABORT="false" QUOTED_IDENTIFIER="true" />
+          <QueryPlan DegreeOfParallelism="1" MemoryGrant="1024" CachedPlanSize="64" CompileTime="9" CompileCPU="9" CompileMemory="808">
+            <MissingIndexes>
+              <MissingIndexGroup Impact="92.41">
+                <MissingIndex Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]">
+                  <ColumnGroup Usage="INEQUALITY">
+                    <Column Name="[event_ts]" ColumnId="3" />
+                  </ColumnGroup>
+                  <ColumnGroup Usage="INCLUDE">
+                    <Column Name="[awb_no]" ColumnId="2" />
+                    <Column Name="[station]" ColumnId="4" />
+                    <Column Name="[status_code]" ColumnId="5" />
+                  </ColumnGroup>
+                </MissingIndex>
+              </MissingIndexGroup>
+            </MissingIndexes>
+            <Warnings>
+              <PlanAffectingConvert ConvertIssue="Cardinality Estimate" Expression="CONVERT_IMPLICIT(nvarchar(3),[e].[station],0)" />
+              <PlanAffectingConvert ConvertIssue="Seek Plan" Expression="CONVERT_IMPLICIT(nvarchar(3),[e].[station],0)=[@station]" />
+            </Warnings>
+            <MemoryGrantInfo SerialRequiredMemory="512" SerialDesiredMemory="1024" RequiredMemory="512" DesiredMemory="1024" RequestedMemory="1024" GrantWaitTime="0" GrantedMemory="1024" MaxUsedMemory="1024" MaxQueryMemory="1654744" LastRequestedMemory="0" IsMemoryGrantFeedbackAdjusted="No: First Execution" />
+            <OptimizerHardwareDependentProperties EstimatedAvailableMemoryGrant="208435" EstimatedPagesCached="104217" EstimatedAvailableDegreeOfParallelism="4" MaxCompileMemory="3520528" />
+            <QueryTimeStats CpuTime="6981" ElapsedTime="7342" />
+            <RelOp AvgRowSize="71" EstimateCPU="0.0254" EstimateIO="0.0112" EstimateRebinds="0" EstimateRewinds="0" EstimatedExecutionMode="Row" EstimateRows="2100" LogicalOp="Sort" NodeId="0" Parallel="false" PhysicalOp="Sort" EstimatedTotalSubtreeCost="112.874">
+              <OutputList>
+                <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="awb_no" />
+                <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="event_ts" />
+                <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="status_code" />
+                <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipper_name" />
+                <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="gross_kg" />
+              </OutputList>
+              <Warnings>
+                <SpillToTempDb SpillLevel="1" SpilledThreadCount="1" />
+                <SortSpillDetails GrantedMemoryKb="1024" UsedMemoryKb="1024" WritesToTempDb="6210" ReadsFromTempDb="6210" />
+              </Warnings>
+              <MemoryFractions Input="1" Output="1" />
+              <RunTimeInformation>
+                <RunTimeCountersPerThread Thread="0" ActualRebinds="1" ActualRewinds="0" ActualRows="185000" ActualEndOfScans="1" ActualExecutions="1" ActualExecutionMode="Row" ActualElapsedms="7310" ActualCPUms="6960" ActualScans="0" ActualLogicalReads="0" ActualPhysicalReads="0" ActualReadAheads="0" ActualLobLogicalReads="0" ActualLobPhysicalReads="0" ActualLobReadAheads="0" InputMemoryGrant="1024" OutputMemoryGrant="1024" UsedMemoryGrant="1024" />
+              </RunTimeInformation>
+              <Sort Distinct="false">
+                <OrderBy>
+                  <OrderByColumn Ascending="false">
+                    <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="event_ts" />
+                  </OrderByColumn>
+                </OrderBy>
+                <RelOp AvgRowSize="71" EstimateCPU="0.00878" EstimateIO="0" EstimateRebinds="0" EstimateRewinds="0" EstimatedExecutionMode="Row" EstimateRows="2100" LogicalOp="Inner Join" NodeId="1" Parallel="false" PhysicalOp="Nested Loops" EstimatedTotalSubtreeCost="112.838">
+                  <OutputList>
+                    <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="awb_no" />
+                    <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipper_name" />
+                  </OutputList>
+                  <RunTimeInformation>
+                    <RunTimeCountersPerThread Thread="0" ActualRows="185000" ActualEndOfScans="1" ActualExecutions="1" ActualExecutionMode="Row" ActualElapsedms="6420" ActualCPUms="6105" />
+                  </RunTimeInformation>
+                  <NestedLoops Optimized="false">
+                    <OuterReferences>
+                      <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="awb_no" />
+                    </OuterReferences>
+                    <RelOp AvgRowSize="38" EstimateCPU="13.2001" EstimateIO="97.1172" EstimateRebinds="0" EstimateRewinds="0" EstimatedExecutionMode="Row" EstimateRows="2100" EstimatedRowsRead="12000000" LogicalOp="Clustered Index Scan" NodeId="2" Parallel="false" PhysicalOp="Clustered Index Scan" EstimatedTotalSubtreeCost="110.317" TableCardinality="12000000">
+                      <OutputList>
+                        <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="awb_no" />
+                        <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="event_ts" />
+                        <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="status_code" />
+                      </OutputList>
+                      <RunTimeInformation>
+                        <RunTimeCountersPerThread Thread="0" ActualRows="185000" ActualRowsRead="12000000" Batches="0" ActualEndOfScans="1" ActualExecutions="1" ActualExecutionMode="Row" ActualElapsedms="4210" ActualCPUms="3985" ActualScans="1" ActualLogicalReads="148210" ActualPhysicalReads="3" ActualReadAheads="147902" ActualLobLogicalReads="0" ActualLobPhysicalReads="0" ActualLobReadAheads="0" />
+                      </RunTimeInformation>
+                      <IndexScan Ordered="false" ForcedIndex="false" ForceScan="false" NoExpandHint="false" Storage="RowStore">
+                        <DefinedValues>
+                          <DefinedValue><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="awb_no" /></DefinedValue>
+                          <DefinedValue><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="event_ts" /></DefinedValue>
+                          <DefinedValue><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="status_code" /></DefinedValue>
+                        </DefinedValues>
+                        <Object Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Index="[PK_awb_event]" Alias="[e]" IndexKind="Clustered" Storage="RowStore" />
+                        <Predicate>
+                          <ScalarOperator ScalarString="CONVERT_IMPLICIT(nvarchar(3),[CargoDB].[dbo].[awb_event].[station] as [e].[station],0)=[@station] AND [CargoDB].[dbo].[awb_event].[event_ts] as [e].[event_ts]&gt;=[@from]">
+                            <Logical Operation="AND">
+                              <ScalarOperator>
+                                <Compare CompareOp="EQ">
+                                  <ScalarOperator>
+                                    <Convert DataType="nvarchar" Length="6" Style="0" Implicit="true">
+                                      <ScalarOperator><Identifier><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="station" /></Identifier></ScalarOperator>
+                                    </Convert>
+                                  </ScalarOperator>
+                                  <ScalarOperator><Identifier><ColumnReference Column="@station" /></Identifier></ScalarOperator>
+                                </Compare>
+                              </ScalarOperator>
+                              <ScalarOperator>
+                                <Compare CompareOp="GE">
+                                  <ScalarOperator><Identifier><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="event_ts" /></Identifier></ScalarOperator>
+                                  <ScalarOperator><Identifier><ColumnReference Column="@from" /></Identifier></ScalarOperator>
+                                </Compare>
+                              </ScalarOperator>
+                            </Logical>
+                          </ScalarOperator>
+                        </Predicate>
+                      </IndexScan>
+                    </RelOp>
+                    <RelOp AvgRowSize="41" EstimateCPU="0.00000418" EstimateIO="0" EstimateRebinds="2099" EstimateRewinds="0" EstimatedExecutionMode="Row" EstimateRows="1" LogicalOp="Inner Join" NodeId="3" Parallel="false" PhysicalOp="Nested Loops" EstimatedTotalSubtreeCost="2.4968">
+                      <OutputList>
+                        <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipper_name" />
+                        <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="gross_kg" />
+                      </OutputList>
+                      <RunTimeInformation>
+                        <RunTimeCountersPerThread Thread="0" ActualRows="185000" ActualEndOfScans="185000" ActualExecutions="185000" ActualExecutionMode="Row" ActualElapsedms="2080" ActualCPUms="1990" />
+                      </RunTimeInformation>
+                      <NestedLoops Optimized="false">
+                        <OuterReferences>
+                          <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipment_id" />
+                        </OuterReferences>
+                        <RelOp AvgRowSize="23" EstimateCPU="0.0001581" EstimateIO="0.003125" EstimateRebinds="2099" EstimateRewinds="0" EstimatedExecutionMode="Row" EstimateRows="1" LogicalOp="Index Seek" NodeId="4" Parallel="false" PhysicalOp="Index Seek" EstimatedTotalSubtreeCost="1.1623" TableCardinality="2400000">
+                          <OutputList>
+                            <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipment_id" />
+                          </OutputList>
+                          <RunTimeInformation>
+                            <RunTimeCountersPerThread Thread="0" ActualRows="185000" ActualRowsRead="185000" ActualEndOfScans="0" ActualExecutions="185000" ActualExecutionMode="Row" ActualElapsedms="880" ActualCPUms="850" ActualScans="0" ActualLogicalReads="555000" ActualPhysicalReads="12" ActualReadAheads="0" />
+                          </RunTimeInformation>
+                          <IndexScan Ordered="true" ScanDirection="FORWARD" ForcedIndex="false" ForceSeek="false" ForceScan="false" NoExpandHint="false" Storage="RowStore">
+                            <DefinedValues>
+                              <DefinedValue><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipment_id" /></DefinedValue>
+                            </DefinedValues>
+                            <Object Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Index="[IX_shipment_awb_no]" Alias="[s]" IndexKind="NonClustered" Storage="RowStore" />
+                            <SeekPredicates>
+                              <SeekPredicateNew>
+                                <SeekKeys>
+                                  <Prefix ScanType="EQ">
+                                    <RangeColumns><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="awb_no" /></RangeColumns>
+                                    <RangeExpressions><ScalarOperator ScalarString="[CargoDB].[dbo].[awb_event].[awb_no] as [e].[awb_no]"><Identifier><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[awb_event]" Alias="[e]" Column="awb_no" /></Identifier></ScalarOperator></RangeExpressions>
+                                  </Prefix>
+                                </SeekKeys>
+                              </SeekPredicateNew>
+                            </SeekPredicates>
+                          </IndexScan>
+                        </RelOp>
+                        <RelOp AvgRowSize="30" EstimateCPU="0.0001581" EstimateIO="0.003125" EstimateRebinds="2099" EstimateRewinds="0" EstimatedExecutionMode="Row" EstimateRows="1" LogicalOp="Clustered Index Seek" NodeId="5" Parallel="false" PhysicalOp="Clustered Index Seek" EstimatedTotalSubtreeCost="1.3319" TableCardinality="2400000">
+                          <OutputList>
+                            <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipper_name" />
+                            <ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="gross_kg" />
+                          </OutputList>
+                          <RunTimeInformation>
+                            <RunTimeCountersPerThread Thread="0" ActualRows="185000" ActualRowsRead="185000" ActualEndOfScans="0" ActualExecutions="185000" ActualExecutionMode="Row" ActualElapsedms="1050" ActualCPUms="1010" ActualScans="0" ActualLogicalReads="592000" ActualPhysicalReads="40" ActualReadAheads="0" />
+                          </RunTimeInformation>
+                          <IndexScan Lookup="true" Ordered="true" ScanDirection="FORWARD" ForcedIndex="false" ForceSeek="false" ForceScan="false" NoExpandHint="false" Storage="RowStore">
+                            <DefinedValues>
+                              <DefinedValue><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipper_name" /></DefinedValue>
+                              <DefinedValue><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="gross_kg" /></DefinedValue>
+                            </DefinedValues>
+                            <Object Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Index="[PK_shipment]" Alias="[s]" TableReferenceId="-1" IndexKind="Clustered" Storage="RowStore" />
+                            <SeekPredicates>
+                              <SeekPredicateNew>
+                                <SeekKeys>
+                                  <Prefix ScanType="EQ">
+                                    <RangeColumns><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipment_id" /></RangeColumns>
+                                    <RangeExpressions><ScalarOperator ScalarString="[CargoDB].[dbo].[shipment].[shipment_id] as [s].[shipment_id]"><Identifier><ColumnReference Database="[CargoDB]" Schema="[dbo]" Table="[shipment]" Alias="[s]" Column="shipment_id" /></Identifier></ScalarOperator></RangeExpressions>
+                                  </Prefix>
+                                </SeekKeys>
+                              </SeekPredicateNew>
+                            </SeekPredicates>
+                          </IndexScan>
+                        </RelOp>
+                      </NestedLoops>
+                    </RelOp>
+                  </NestedLoops>
+                </RelOp>
+              </Sort>
+            </RelOp>
+            <ParameterList>
+              <ColumnReference Column="@from" ParameterDataType="datetime2(7)" ParameterCompiledValue="'2026-09-01 00:00:00.0000000'" ParameterRuntimeValue="'2026-09-01 00:00:00.0000000'" />
+              <ColumnReference Column="@station" ParameterDataType="nvarchar(3)" ParameterCompiledValue="N'DXB'" ParameterRuntimeValue="N'DXB'" />
+            </ParameterList>
+          </QueryPlan>
+        </StmtSimple>
+      </Statements>
+    </Batch>
+  </BatchSequence>
+</ShowPlanXML>

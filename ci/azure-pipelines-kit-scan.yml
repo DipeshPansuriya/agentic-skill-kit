@@ -1,0 +1,46 @@
+# Skill-kit quality gate for Azure DevOps Pipelines.
+# Setup: copy the skill-kit folder into your repo as .skill-kit/ (skills/ + ci/),
+#        save this file as azure-pipelines-kit-scan.yml and create a pipeline from it.
+#        For PR runs, add it as a Build Validation policy on the target branch.
+# Optional: install the "SARIF SAST Scans Tab" extension to view results in the Scans tab.
+trigger:
+  branches:
+    include: [main]
+
+pr:
+  branches:
+    include: ['*']
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    fetchDepth: 0
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.12'
+
+  - bash: |
+      set -o pipefail
+      ARGS="--kit .skill-kit --fail-on HIGH --md $(Build.ArtifactStagingDirectory)/kit-scan.md --sarif $(Build.ArtifactStagingDirectory)/CodeAnalysisLogs/kit-scan.sarif"
+      mkdir -p "$(Build.ArtifactStagingDirectory)/CodeAnalysisLogs"
+      if [ -f .skill-kit/baseline.json ]; then ARGS="$ARGS --baseline .skill-kit/baseline.json"; fi
+      TARGET="$(System.PullRequest.TargetBranch)"
+      if [ "$(Build.Reason)" = "PullRequest" ]; then
+        python .skill-kit/ci/kit_scan.py $ARGS --changed "origin/${TARGET#refs/heads/}"
+      else
+        python .skill-kit/ci/kit_scan.py $ARGS .
+      fi
+      STATUS=$?
+      echo "##vso[task.uploadsummary]$(Build.ArtifactStagingDirectory)/kit-scan.md"
+      exit $STATUS
+    displayName: Run skill-kit scanners
+
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    displayName: Publish SARIF (CodeAnalysisLogs)
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)/CodeAnalysisLogs
+      ArtifactName: CodeAnalysisLogs

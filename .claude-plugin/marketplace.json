@@ -1,0 +1,17 @@
+{
+  "name": "dipesh-skills",
+  "description": "Agentic skill kit for Claude Code: engineering, SQL, performance, refactoring, security, testing and work-comms skills, plus optional safety hooks.",
+  "owner": { "name": "Dipesh Pansuriya", "url": "https://github.com/DipeshPansuriya" },
+  "plugins": [
+    {
+      "name": "agentic-skill-kit",
+      "source": "./plugins/agentic-skill-kit",
+      "description": "24 skills: skill building and benchmarking, weekly comms, delivery docs, and engineering across .NET, Java, Python, React, Angular, MS-SQL, PostgreSQL, NoSQL and Playwright."
+    },
+    {
+      "name": "agentic-skill-kit-guard",
+      "source": "./plugins/agentic-skill-kit-guard",
+      "description": "Optional safety hooks: security scan after every file edit, and blocks git commits that contain secrets."
+    }
+  ]
+}

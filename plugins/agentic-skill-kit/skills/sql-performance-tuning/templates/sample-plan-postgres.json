@@ -1,0 +1,194 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Sort",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 366380.1,
+      "Total Cost": 366383.0,
+      "Plan Rows": 1150,
+      "Plan Width": 71,
+      "Actual Startup Time": 7890.4,
+      "Actual Total Time": 7951.8,
+      "Actual Rows": 395000,
+      "Actual Loops": 1,
+      "Sort Key": [
+        "e.event_ts DESC"
+      ],
+      "Sort Method": "external merge",
+      "Sort Space Used": 48200,
+      "Sort Space Type": "Disk",
+      "Shared Hit Blocks": 1254431,
+      "Shared Read Blocks": 187511,
+      "Temp Read Blocks": 8233,
+      "Temp Written Blocks": 10445,
+      "Plans": [
+        {
+          "Node Type": "Hash Join",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 298836.4,
+          "Total Cost": 366310.2,
+          "Plan Rows": 1150,
+          "Plan Width": 71,
+          "Actual Startup Time": 5901.7,
+          "Actual Total Time": 7102.5,
+          "Actual Rows": 395000,
+          "Actual Loops": 1,
+          "Inner Unique": false,
+          "Hash Cond": "(s.awb_no = e.awb_no)",
+          "Shared Hit Blocks": 1254431,
+          "Shared Read Blocks": 187511,
+          "Temp Read Blocks": 2208,
+          "Temp Written Blocks": 4420,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "shipment",
+              "Alias": "s",
+              "Startup Cost": 0.0,
+              "Total Cost": 61240.0,
+              "Plan Rows": 2390000,
+              "Plan Width": 41,
+              "Actual Startup Time": 0.021,
+              "Actual Total Time": 620.334,
+              "Actual Rows": 2400000,
+              "Actual Loops": 1,
+              "Shared Hit Blocks": 1905,
+              "Shared Read Blocks": 35335,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Hash",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 298822.0,
+              "Total Cost": 298822.0,
+              "Plan Rows": 1150,
+              "Plan Width": 38,
+              "Actual Startup Time": 5890.12,
+              "Actual Total Time": 5890.12,
+              "Actual Rows": 395000,
+              "Actual Loops": 1,
+              "Hash Buckets": 131072,
+              "Original Hash Buckets": 2048,
+              "Hash Batches": 8,
+              "Original Hash Batches": 1,
+              "Peak Memory Usage": 4097,
+              "Shared Hit Blocks": 1252526,
+              "Shared Read Blocks": 152176,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 2210,
+              "Plans": [
+                {
+                  "Node Type": "Nested Loop",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Join Type": "Anti",
+                  "Startup Cost": 0.29,
+                  "Total Cost": 298822.0,
+                  "Plan Rows": 1150,
+                  "Plan Width": 38,
+                  "Actual Startup Time": 0.431,
+                  "Actual Total Time": 5712.904,
+                  "Actual Rows": 395000,
+                  "Actual Loops": 1,
+                  "Inner Unique": false,
+                  "Shared Hit Blocks": 1252526,
+                  "Shared Read Blocks": 152176,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "awb_event",
+                      "Alias": "e",
+                      "Startup Cost": 0.0,
+                      "Total Cost": 298450.0,
+                      "Plan Rows": 1200,
+                      "Plan Width": 38,
+                      "Actual Startup Time": 0.412,
+                      "Actual Total Time": 3850.227,
+                      "Actual Rows": 410000,
+                      "Actual Loops": 1,
+                      "Filter": "((lower((station)::text) = 'dxb'::text) AND (event_ts >= '2026-09-01 00:00:00+00'::timestamp with time zone))",
+                      "Rows Removed by Filter": 11590000,
+                      "Shared Hit Blocks": 22114,
+                      "Shared Read Blocks": 150336,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    },
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Inner",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "ix_cargo_hold_awb_no",
+                      "Relation Name": "cargo_hold",
+                      "Alias": "h",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 0.31,
+                      "Plan Rows": 1,
+                      "Plan Width": 12,
+                      "Actual Startup Time": 0.003,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 0,
+                      "Actual Loops": 410000,
+                      "Index Cond": "(awb_no = e.awb_no)",
+                      "Rows Removed by Index Recheck": 0,
+                      "Shared Hit Blocks": 1230412,
+                      "Shared Read Blocks": 1840,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "Settings": {
+      "random_page_cost": "1.1",
+      "work_mem": "4MB"
+    },
+    "Planning": {
+      "Shared Hit Blocks": 212,
+      "Shared Read Blocks": 0
+    },
+    "Planning Time": 1.214,
+    "Triggers": [],
+    "JIT": {
+      "Functions": 14,
+      "Options": {
+        "Inlining": false,
+        "Optimization": false,
+        "Expressions": true,
+        "Deforming": true
+      },
+      "Timing": {
+        "Generation": 2.1,
+        "Inlining": 0.0,
+        "Optimization": 18.4,
+        "Emission": 161.7,
+        "Total": 182.2
+      }
+    },
+    "Execution Time": 7985.633
+  }
+]

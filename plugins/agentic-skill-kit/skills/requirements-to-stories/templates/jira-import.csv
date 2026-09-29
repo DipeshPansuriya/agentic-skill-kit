@@ -1,0 +1,4 @@
+Issue Type,Summary,Description,Acceptance Criteria,Story Points,Priority,Epic Link,Labels,Issue ID,Parent ID
+Epic,e-DO issuance,"Import delivery order issued electronically to consignee/forwarder",,,High,,edo,EP-01,
+Story,Issue e-DO after charges paid,"As a GHA import agent, I want to issue an e-DO once all charges are paid, so that the forwarder can collect cargo without visiting the counter.","Given AWB 000-00000000 has status RCF and charges paid | When the agent clicks Issue e-DO | Then an e-DO number is generated and sent to the forwarder",5,High,EP-01,edo,ST-01,EP-01
+Story,Block e-DO when charges unpaid,"As a GHA import agent, I want e-DO issuance blocked while charges are unpaid, so that revenue is not lost.","Given AWB 000-00000000 has unpaid storage charges | When the agent clicks Issue e-DO | Then issuance is refused with message 'Charges pending'",3,High,EP-01,edo,ST-02,EP-01

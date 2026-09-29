@@ -1,0 +1,59 @@
+# Skill-kit quality gate for GitHub Actions.
+# Setup: copy the skill-kit folder into your repo as .skill-kit/ (skills/ + ci/),
+#        then save this file as .github/workflows/kit-scan.yml
+# PRs scan only changed files; pushes to main scan the whole repo.
+name: kit-scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write   # for SARIF upload to code scanning
+
+concurrency:
+  group: kit-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run skill-kit scanners
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          ARGS="--kit .skill-kit --fail-on HIGH --md $GITHUB_STEP_SUMMARY --sarif kit-scan.sarif"
+          if [ -f .skill-kit/baseline.json ]; then ARGS="$ARGS --baseline .skill-kit/baseline.json"; fi
+          if [ -n "$BASE_REF" ]; then
+            python .skill-kit/ci/kit_scan.py $ARGS --changed "origin/$BASE_REF"
+          else
+            python .skill-kit/ci/kit_scan.py $ARGS .
+          fi
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('kit-scan.sarif') != ''
+        continue-on-error: true   # needs code scanning enabled (GitHub Advanced Security on private repos)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: kit-scan.sarif
+          category: skill-kit
+
+      - name: Keep SARIF as artifact
+        if: always() && hashFiles('kit-scan.sarif') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: kit-scan-sarif
+          path: kit-scan.sarif
