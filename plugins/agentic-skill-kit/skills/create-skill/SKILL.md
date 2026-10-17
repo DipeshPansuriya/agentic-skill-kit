@@ -1,6 +1,7 @@
 ---
 name: create-skill
 description: Build a validated skill package (SKILL.md, references, templates, scripts, evals) for a repeatable work task using the L1-L3 kit method. Use when the user asks to create a skill, turn a weekly task into a skill, or scaffold a SKILL.md.
+disable-model-invocation: true
 ---
 
 # Create a Skill (Advanced)

@@ -1,6 +1,7 @@
 ---
 name: benchmark-skill
 description: Score a skill against a baseline with a results CSV and scripted verdict (SHIP, FIX, KEEP) on triggers, quality, consistency and cost. Use when the user asks to benchmark, A/B compare, or regression-check a skill.
+disable-model-invocation: true
 ---
 
 # Benchmark a Skill (Advanced)

@@ -1,6 +1,7 @@
 ---
 name: combine-skills
 description: Merge several related skills into one skill with shared rules and a routing table, then check the merged skill against the originals. Use when the user asks to combine, merge, consolidate, or unify multiple skills.
+disable-model-invocation: true
 ---
 
 # Combine Skills (Advanced)
