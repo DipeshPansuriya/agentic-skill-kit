@@ -37,6 +37,22 @@ Also useful: deployment diagram (regions, AZs, network zones) and dynamic/sequen
 - Storage/yr = records/day × avg size × 365 × (1 + index overhead ~0.3-1.0).
 - State the formula and inputs; do the arithmetic exactly.
 
+## Production design template
+
+Use this shape for a working system (dashboard BFF, like-counter, live stream, resumable upload), not only C4 boxes.
+
+1. **Authoritative vs derived.** Name the source of truth (e.g. `(post_id, user_id)` relationship). Counts, caches and feeds are derived and may lag. Never treat an evictable cache as the only record of a committed write.
+2. **Components table.** Each row: name, purpose, design notes (what it must not do).
+3. **Request flows.** Numbered steps for the write path, the undo path, and the read path. State what the client may show immediately vs what is eventually consistent.
+4. **Idempotency.** Unique key / conditional write; event id dedupe; state-transition deltas (`absent→present` emits +1, a repeat emits nothing). Outbox or CDC so a committed write cannot lose its event.
+5. **Hot keys.** One row that every write hits is a bottleneck. Shard derived counters, hash-bucket partitions, or buffer through a stream. Add shards when load tests show contention, not before.
+6. **Client aggregation → BFF.** Many browser calls become one dashboard request; the BFF fans out in parallel, caches with per-part TTLs, returns a purpose-built payload.
+7. **Failure modes table.** Timeout + retry, dropped mid-transfer, cache loss, worker lag, abandoned upload. Expected behaviour and how to repair (replay + reconciliation).
+8. **Observability.** p50/p95/p99, success vs duplicate vs error, queue lag, drift/reconciliation delta, hot-shard write pressure, cache hit ratio.
+9. **Build order.** Correct durable API first; then events; then idempotent consumers; then shards/cache when measured. Do not add distributed parts before the workload needs them.
+
+Multipart / resumable uploads: server initiates and completes; client uploads parts to presigned URLs with parallel limit (3–5), backoff+jitter, ordered ETags on complete, abort on cancel, lifecycle rules for abandoned parts.
+
 ## Common logistics building blocks
 | Need | Default choice | When to change |
 |---|---|---|
