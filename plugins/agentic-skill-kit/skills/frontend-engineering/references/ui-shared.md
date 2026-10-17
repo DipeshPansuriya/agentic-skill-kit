@@ -71,3 +71,30 @@ Tools: axe DevTools / `@axe-core/playwright` / `jest-axe` or `vitest-axe`, Light
 ### Other
 - Nothing secret in the bundle (`VITE_*`, `NEXT_PUBLIC_*`, Angular `environment.ts` are public).
 - Keep dependencies patched (`npm audit`, Dependabot/Renovate); pin lock files.
+
+## Spec-level UI prompt
+
+When the ask is a distinctive screen (login, OTP, wizard, marketing), write the prompt as a **contract**, not a mood board. Structure:
+
+1. **Constraints first** — one file vs framework, allowed fonts, no backend, what is forbidden.
+2. **Tokens on `:root`** — exact hex for background, text, muted, primary, success, error. Never "a dark theme".
+3. **Motion with numbers** — duration (ms), easing, stagger (ms), what loops and what plays once. Restart by removing the class, forcing a reflow (`void el.offsetWidth`), then re-adding it.
+4. **Every control, every state** — default, hover, focus, filled, invalid, loading, success, disabled, lock-out. Name the animation for each (shake, pop, flip). Don't put a re-triggerable animation on the same node as an entrance animation — wrap it.
+5. **Validation copy** — the exact strings, when they appear (blur vs keystroke), and which field gets focus.
+6. **Quality close** — `prefers-reduced-motion`, `aria-label` / `aria-live`, `textContent` not `innerHTML` for user text, a min width (e.g. 360px) with the shrink rule (`min(52px, 12.5vw)`).
+
+Do not copy another product's name, logo, sounds or palette. Take the **structure**; invent the tokens.
+
+## Design system first (marketing / visual pages)
+
+The design system is written **before** the first page. One giant "make it nice" prompt skips this.
+
+1. **Extract** — Figma frame (MCP) or 1–2 *feel* references. List every colour+role, type scale (size/weight/line-height), spacing, radii, shadows, components. Do not build.
+2. **Tokens file** — DESIGN.md or `:root` CSS. Later pages only use these values.
+3. **Director brief** — audience, feeling, pages, one hero promise, 3 benefits, proof, FAQ, one CTA, hex+fonts from the token file. Taste (`design-taste-frontend`) + motion skills + Impeccable in the **product repo**, not a parent hub.
+4. **Browser check** — desktop and mobile screenshots; fix overflow/alignment; commit a Playwright spec and re-run `npx playwright test`.
+5. **Tighten with numbers** — section gap in px, one button not two, before/after shots. Not vibes.
+
+Generic AI look → missing Taste or missing reference. Cramped → exact spacing + mobile Playwright. Fake heroes → real credited photos, then rebuild.
+
+Admin worklists and grids: enterprise density playbook, not this section.

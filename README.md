@@ -1,6 +1,6 @@
 # Agentic Skill Kit
 
-A Claude Code plugin marketplace with **24 skills** for day-to-day engineering and work communication. It also includes an optional **guard** plugin with safety hooks, a **CI/CD quality gate**, and guides on how to build and benchmark your own skills.
+A Claude Code plugin marketplace with **49 skills** for day-to-day engineering and work communication. It also includes an optional **guard** plugin with safety hooks, a **CI/CD quality gate**, and guides on how to build and benchmark your own skills.
 
 ## Install (Claude Code / VS Code / Cursor)
 
@@ -21,6 +21,10 @@ Skills load automatically when a request matches. You can also call one directly
 | **Comms** | `weekly-status-report`, `meeting-notes-actions`, `customer-ops-email`, `sop-writer`, `rfp-answers` |
 | **Delivery** | `incident-rca`, `requirements-to-stories`, `release-notes`, `test-cases-from-requirements`, `kpi-analysis` |
 | **Engineering** | `code-review`, `software-architecture` (incl. design patterns), `workflow-design`, `backend-engineering` (.NET, Java, Python), `frontend-engineering` (React, Angular), `database-engineering` (MS-SQL, PostgreSQL, NoSQL), `sql-performance-tuning`, `code-performance`, `refactoring`, `security-review-fix`, `playwright-testing` |
+| **UI / store** | `web-design`, `modern-enterprise-ui`, `anatomy`, `goldie`, `video-avatar`, `room-redesign` |
+| **Spec Kit** | `speckit-specify`, `speckit-plan`, `speckit-tasks`, `speckit-implement`, `speckit-analyze`, `speckit-clarify`, `speckit-checklist`, `speckit-constitution`, `speckit-converge`, `speckit-taskstoissues` |
+| **Data / integration** | `kafka-integration`, `kafka-event-driven-architecture`, `mongodb-usage`, `apache-camel-integration`, `configuring-opentelemetry-dotnet`, `stack-java-spring-react` |
+| **Guidelines / GTM / pentest** | `karpathy-guidelines`, `clay-gtm`, `strix-pentest` |
 
 Each skill has a `SKILL.md`. Most also have `references/`, `templates/`, helper `scripts/` (Python 3, standard library) and `evals/test-cases.md`, which includes requests the skill should *not* trigger on.
 

@@ -38,7 +38,7 @@ Ask at most 3 questions, and only when the answer changes the recommendation. Ot
 ## Routing
 | Request | Use | Output |
 |---|---|---|
-| (a) "Design a system / solution for ..." | `references/system-design.md` | Drivers, NFR table, options, C4 L1-L2 diagrams, data flow, risks |
+| (a) "Design a system / solution for ..." | `references/system-design.md` (include **Production design template**: authoritative vs derived, flows, failure modes, metrics, build order) | Drivers, NFR table, options, C4 L1-L2 diagrams, data flow, risks |
 | (b) "Write an ADR", "document this decision" | `templates/adr-template.md` | One ADR (MADR-style) with weighted trade-off table |
 | (c) "Which pattern ...", "how to handle retries / dual writes / long transactions" | `references/design-patterns.md` | Pattern, when to use, when NOT to, logistics example, code/diagram sketch |
 | (d) "Review this architecture / design" | `references/review-checklist.md` | Findings table (High/Med/Low) + scorecard + top 3 actions |

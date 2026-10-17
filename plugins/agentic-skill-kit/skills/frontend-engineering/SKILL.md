@@ -32,6 +32,7 @@ Ask **one** question only if the framework or major version is unknown *and* the
 | React, JSX/TSX, hooks, Next.js/Vite React, Zustand, Redux Toolkit, TanStack Query, RTL | `references/react.md` |
 | Angular, components, signals, RxJS, NgRx, reactive forms, interceptors, TestBed | `references/angular.md` |
 | Accessibility, forms UX, loading/error/empty states, i18n, XSS, token storage, CSP | `references/ui-shared.md` (always skim for any new component) |
+| A distinctive, heavily specified UI (login, OTP, wizard, marketing) | `references/ui-shared.md` → **Spec-level UI prompt** + **Design system first**; pair with `frontend-design` / Taste |
 | Reviewing a finished component before returning it | `templates/component-checklist.md` |
 | UI plus backend API (e.g. Angular UI + .NET API) | Framework file here; hand the API to the backend-engineering skill; share one contract |
 | None clearly match | Ask one question: React or Angular, and which version? |

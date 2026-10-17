@@ -1,7 +1,7 @@
 {
   "name": "agentic-skill-kit",
-  "version": "1.0.0",
-  "description": "24 skills: build and benchmark skills, weekly comms, delivery docs, and engineering across .NET, Java, Python, React, Angular, MS-SQL, PostgreSQL, NoSQL and Playwright, including performance, refactoring and security fixes.",
+  "version": "1.1.0",
+  "description": "49 skills: engineering, Spec Kit, store screenshots, isometric explainers, marketing UI, local pentest, and work comms. Installable from this repo only.",
   "author": { "name": "Dipesh Pansuriya", "url": "https://github.com/DipeshPansuriya" },
   "homepage": "https://github.com/DipeshPansuriya/agentic-skill-kit",
   "repository": "https://github.com/DipeshPansuriya/agentic-skill-kit",
