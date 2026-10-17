@@ -6,7 +6,7 @@
     {
       "name": "agentic-skill-kit",
       "source": "./plugins/agentic-skill-kit",
-      "description": "24 skills: skill building and benchmarking, weekly comms, delivery docs, and engineering across .NET, Java, Python, React, Angular, MS-SQL, PostgreSQL, NoSQL and Playwright."
+      "description": "49 skills: engineering, Spec Kit, store screenshots, isometric explainers, marketing UI, local pentest, and work comms."
     },
     {
       "name": "agentic-skill-kit-guard",

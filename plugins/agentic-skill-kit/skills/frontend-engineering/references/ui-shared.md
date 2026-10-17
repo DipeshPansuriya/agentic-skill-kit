@@ -84,3 +84,17 @@ When the ask is a distinctive screen (login, OTP, wizard, marketing), write the 
 6. **Quality close** — `prefers-reduced-motion`, `aria-label` / `aria-live`, `textContent` not `innerHTML` for user text, a min width (e.g. 360px) with the shrink rule (`min(52px, 12.5vw)`).
 
 Do not copy another product's name, logo, sounds or palette. Take the **structure**; invent the tokens.
+
+## Design system first (marketing / visual pages)
+
+The design system is written **before** the first page. One giant "make it nice" prompt skips this.
+
+1. **Extract** — Figma frame (MCP) or 1–2 *feel* references. List every colour+role, type scale (size/weight/line-height), spacing, radii, shadows, components. Do not build.
+2. **Tokens file** — DESIGN.md or `:root` CSS. Later pages only use these values.
+3. **Director brief** — audience, feeling, pages, one hero promise, 3 benefits, proof, FAQ, one CTA, hex+fonts from the token file. Taste (`design-taste-frontend`) + motion skills + Impeccable in the **product repo**, not a parent hub.
+4. **Browser check** — desktop and mobile screenshots; fix overflow/alignment; commit a Playwright spec and re-run `npx playwright test`.
+5. **Tighten with numbers** — section gap in px, one button not two, before/after shots. Not vibes.
+
+Generic AI look → missing Taste or missing reference. Cramped → exact spacing + mobile Playwright. Fake heroes → real credited photos, then rebuild.
+
+Admin worklists and grids: enterprise density playbook, not this section.
