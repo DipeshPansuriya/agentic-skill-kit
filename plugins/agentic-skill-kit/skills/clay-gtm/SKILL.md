@@ -1,12 +1,12 @@
 ---
 name: clay-gtm
-description: "Use when Dipesh wants Clay GTM work from an agent: company/people search, enrichment waterfalls, tables, or workflows. Not for product code or n8n (use Maya's n8n path)."
+description: "Use when the user wants Clay GTM work from an agent: company/people search, enrichment waterfalls, tables, or workflows. Not for product code or n8n (use an n8n workflow)."
 user-invocable: true
 ---
 
 # Clay GTM (on demand)
 
-This file in DipeshPansuriya/agentic-skill-kit is the router. Do not fetch a GitHub plugin pack.
+This file is the router. Do not fetch a GitHub plugin pack.
 
 Original Clay procedures (same steps and output as the Clay plugin) already live on disk when this machine has used Clay before:
 
@@ -29,6 +29,6 @@ On Windows the official CLI is **macOS/Linux only**. `clay login` needs WSL or a
 | Sequences | `campaigns`, `campaigns-sequence-writing` |
 | Credits / CLI | `credits-quotas-plans`, `cli`, `setup` |
 
-Spend and CRM writes wait for Dipesh.
+Spend and CRM writes wait for the user's go.
 
-Maya owns GTM automation. Product engineering stays with Arjun.
+GTM automation stays separate from product engineering.
