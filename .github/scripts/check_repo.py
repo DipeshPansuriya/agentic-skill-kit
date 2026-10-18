@@ -49,6 +49,17 @@ validator = SK / "create-skill/scripts/validate_skill.py"
 skills = sorted(d for d in SK.iterdir() if d.is_dir())
 bad = [d.name for d in skills if run(validator, d).returncode != 0]
 check(f"all {len(skills)} skills pass validate_skill.py", not bad, ", ".join(bad))
+check("validate_skill.py copies are identical",
+      validator.read_bytes() == (SK / "combine-skills/scripts/validate_skill.py").read_bytes())
+with tempfile.TemporaryDirectory() as tmp:
+    d = Path(tmp) / "ref-probe"
+    d.mkdir()
+    head = "---\nname: ref-probe\ndescription: Probe. Use when testing.\n---\n"
+    (d / "SKILL.md").write_text(head + "See https://x.test/references/a.html and `.specify/scripts/b.ps1`.\n",
+                                encoding="utf-8")
+    check("validator ignores URL and .specify/ paths", run(validator, d).returncode == 0)
+    (d / "SKILL.md").write_text(head + "Read `references/missing.md`.\n", encoding="utf-8")
+    check("validator still flags a missing skill file", run(validator, d).returncode == 1)
 
 # 3. scanner self-tests
 with tempfile.TemporaryDirectory() as tmp:

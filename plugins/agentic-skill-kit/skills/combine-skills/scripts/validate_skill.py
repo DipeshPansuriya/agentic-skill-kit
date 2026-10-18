@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+# Windows consoles default to cp1252; never crash on a non-ASCII message.
+sys.stdout.reconfigure(errors="replace")
+
 if len(sys.argv) != 2:
     sys.exit("Usage: validate_skill.py <skill-dir>")
 root = Path(sys.argv[1])
@@ -65,7 +68,8 @@ placeholders = re.findall(r"<[a-zA-Z][^>\n]{0,60}>", prose)
 if placeholders:
     warns.append(f"{len(placeholders)} unfilled placeholder(s), e.g. {placeholders[0]}")
 
-for ref in sorted(set(re.findall(r"`?((?:references|templates|scripts|evals)/[\w./-]+)`?", body))):
+# Only skill-relative paths: skip a match inside a URL or a longer path (e.g. the user's `.specify/scripts/...`).
+for ref in sorted(set(re.findall(r"(?<![\w./:-])((?:references|templates|scripts|evals)/[\w./-]+)", body))):
     ref = ref.rstrip(".,)")
     if not (root / ref).exists():
         errors.append(f"referenced file missing: {ref}")
