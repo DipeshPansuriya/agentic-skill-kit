@@ -91,8 +91,7 @@ things that are **correct** on a dense operations grid:
 | Hairline rules, zero radius, dense columns | Exactly the worklist recipe above |
 | Middle-dot meta strings | Fine for compact meta lines in a toolbar |
 
-Resolution (design-brand-tokens-vs-look-and-feel.md was withdrawn 2026-09-07
-with the `kale-design` skill it cited — ledger row 91; that local skill is now `kale-docs-brand`, documents only): **tokens win on brand,
+Resolution (when your organisation's brand skill and this playbook disagree): **tokens win on brand,
 design wins on layout - and on a worklist, scanability is the design goal.** Take `frontend-design`'s discipline (one bold thing, remove
 an accessory, no default gradients/shadows/cards-in-cards) and leave its
 editorial-page taste where it conflicts with density. Say which you did.

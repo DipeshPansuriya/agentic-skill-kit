@@ -6,7 +6,7 @@ user-invocable: true
 
 # Four coding checks (caution over speed)
 
-This file in DipeshPansuriya/agentic-skill-kit is the whole skill. Do not install a third-party plugin or append a remote CLAUDE.md. Skip on a genuine one-line fix. Pair with `## ponytail-minimal-code` and `## ask-or-act`.
+This file is the whole skill. Do not install a third-party plugin or append a remote CLAUDE.md. Skip on a genuine one-line fix. Pair with a minimal-code rule (such as ponytail) and ask-before-acting.
 
 ## 1. Think before coding
 

@@ -1,14 +1,14 @@
 ---
 name: anatomy
-description: "Use when Dipesh wants an idea explained as a live isometric machine drawing (HTML, SVG, or React). Not for ordinary diagrams (use archify) or marketing pages (use web-design)."
+description: "Use when the user wants an idea explained as a live isometric machine drawing (HTML, SVG, or React). Not for ordinary diagrams (use archify) or marketing pages (use web-design)."
 user-invocable: true
 ---
 
 # Anatomy — idea as a working machine
 
-This file in DipeshPansuriya/agentic-skill-kit is the whole skill. Do not fetch another owner's GitHub tree.
+This file is the whole skill. Do not fetch another owner's GitHub tree.
 
-Build in the **code root** (Node 22+). No API keys. Source Dipesh owns: a Node build script and the page it writes, or React geometry modules. Long session on purpose: invent, build, zoom every joint, then hand over.
+Build in the **code root** (Node 22+). No API keys. Source the user owns: a Node build script and the page it writes, or React geometry modules. Long session on purpose: invent, build, zoom every joint, then hand over.
 
 ## The object is the explanation
 
@@ -47,6 +47,6 @@ Two failures: stacked plates (too abstract) or one bland slab (too flat). Fix: m
 
 Copy-ready: Raptor on a test stand; message queue as a marble run; tokamak; CNC plasma cutter; DNS as pneumatic tubes; mechanical watch. Say HTML, SVG, or React; light or dark.
 
-It draws machines, instruments, tools and furniture — not people or maps. Archify stays the architecture-diagram tool (`diagrams-are-archify-only`).
+It draws machines, instruments, tools and furniture — not people or maps. Archify stays the architecture-diagram tool.
 
-Arjun builds; Kavita gates if it ships in a product repo.
+The developer builds it; it goes through normal review if it ships in a product repo.

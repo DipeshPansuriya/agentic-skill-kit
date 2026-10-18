@@ -1,14 +1,14 @@
 ---
 name: video-avatar
-description: "Use when Dipesh wants a cartoon talking-head avatar (hoodie, glasses, teaching pose) and a local screen-record/edit for a video. Not for store preview clips (use goldie) or HeyGen unless he names it."
+description: "Use when the user wants a cartoon talking-head avatar (hoodie, glasses, teaching pose) and a local screen-record/edit for a video. Not for store preview clips (use goldie) or HeyGen unless he names it."
 user-invocable: true
 ---
 
 # Video avatar (local, no git)
 
-This file in DipeshPansuriya/agentic-skill-kit is the whole skill. Do not fetch an avatar GitHub tree. Recorder: a **release** binary already on disk, or the OS tool; cut with `ffmpeg`.
+This file is the whole skill. Do not fetch an avatar GitHub tree. Recorder: a **release** binary already on disk, or the OS tool; cut with `ffmpeg`.
 
-Approved video path remains **local ffmpeg** (brag-slim). Hosted talking-head vendors wait for a fresh go.
+Approved video path remains **local ffmpeg**. Hosted talking-head vendors wait for a fresh go.
 
 ## 1. Still — lock this look
 
@@ -20,9 +20,9 @@ Match the house avatar: flat vector illustration, not photo, not 3D, not cinemat
 - Cream background with a faint grey dot grid
 - Head-and-shoulders, centred, even lighting, no text, no logo, no watermark
 
-Generate the still **outside the hub** (working-tree or the project's asset folder). Hub git stays text-only (`## no-media-in-repo`). Same character every video: reuse the file; do not invent a new face.
+Generate the still **outside the repo** (a scratch working tree or the project's asset folder). Git stays text-only: no media files committed. Same character every video: reuse the file; do not invent a new face.
 
-Prompt to reuse (image tool or Dipesh's generator):
+Prompt to reuse (any image tool the user has):
 
 ```
 Flat vector illustration of a young South Asian man, short black hair,
@@ -35,13 +35,13 @@ with subtle grey polka dots, even lighting, no text, no watermark.
 
 Prefer the **Recordly release binary** (Windows `.exe` from its GitHub **Releases** page), not a source clone. Features we use: zoom, cursor, webcam overlay, trim, speed, MP4/GIF.
 
-If Recordly is not installed, record with the OS tool Dipesh already has, then cut with `ffmpeg` on PATH:
+If Recordly is not installed, record with the OS tool already on the machine, then cut with `ffmpeg` on PATH:
 
 ```
-ffmpeg -i take.mp4 -ss 00:00:01 -t 00:00:21 -c:v libx264 -pix_fmt yuv420p -an out/brag.mp4
+ffmpeg -i take.mp4 -ss 00:00:01 -t 00:00:21 -c:v libx264 -pix_fmt yuv420p -an out/clip.mp4
 ```
 
-Keep cuts short (the approved brag-slim was ~21 s). Nothing published, nothing uploaded, until Dipesh's word.
+Keep cuts short (about 20 s works well). Nothing published, nothing uploaded, until the user says go.
 
 ## 3. Assemble
 
@@ -49,4 +49,4 @@ Keep cuts short (the approved brag-slim was ~21 s). Nothing published, nothing u
 2. Screen recording of the product (step 2)
 3. Optional picture-in-picture: avatar in a corner — Recordly overlay, or ffmpeg overlay. No new SaaS without go.
 
-Maya / Arjun: Maya if it is personal content; Arjun if it is a product demo in a code root. Output stays in the working-tree or `_reports/` as a **path**, never a committed media file.
+Personal content and product demos follow the same steps; a product demo is recorded from its code root. Output stays in a scratch working tree or a reports folder as a **path**, never a committed media file.

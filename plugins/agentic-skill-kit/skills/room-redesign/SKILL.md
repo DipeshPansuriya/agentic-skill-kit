@@ -1,12 +1,12 @@
 ---
 name: room-redesign
-description: "Use when Dipesh uploads one room photo and wants a contractor-ready plan (layout, paint, furniture, lighting, budget), not Pinterest ideas. Not for product UI or code."
+description: "Use when the user uploads one room photo and wants a contractor-ready plan (layout, paint, furniture, lighting, budget), not Pinterest ideas. Not for product UI or code."
 user-invocable: true
 ---
 
 # Room redesign (plan, not vibes)
 
-This file in DipeshPansuriya/agentic-skill-kit is the whole skill. Do not fetch another GitHub tree.
+This file is the whole skill. Do not fetch another GitHub tree.
 
 One wide **corner** photo, lights on, so windows, doors and outlets are visible. One photo is enough.
 
@@ -38,4 +38,4 @@ Write `_reports/<date>-room-<slug>.md`:
 
 No finished-room render is required. The shopping list is the deliverable.
 
-Anika owns the plan. Code or a mock page needs Mira → Arjun.
+This skill produces the plan only. Code or a mock page is a separate development task.
