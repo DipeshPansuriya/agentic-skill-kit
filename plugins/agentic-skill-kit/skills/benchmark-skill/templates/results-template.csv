@@ -1,3 +1,0 @@
-case_id,type,should_trigger,version,run,triggered,routed_ok,q_format,q_facts,q_no_invent,q_rules,q_usable,critical,structure,tokens,seconds,notes
-1,single,1,A,1,,,,,,,,,,,,
-1,single,1,B,1,,,,,,,,,,,,
