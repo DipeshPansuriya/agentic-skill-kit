@@ -6,7 +6,7 @@
     {
       "name": "agentic-skill-kit",
       "source": "./plugins/agentic-skill-kit",
-      "description": "39 skills: engineering, Spec Kit, store screenshots, isometric explainers, marketing UI, local pentest, and work comms."
+      "description": "31 skills: engineering, Spec Kit, isometric explainers, marketing UI, local pentest, and work comms."
     },
     {
       "name": "agentic-skill-kit-guard",
