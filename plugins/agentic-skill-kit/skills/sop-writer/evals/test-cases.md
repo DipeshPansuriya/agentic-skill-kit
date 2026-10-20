@@ -14,7 +14,7 @@ Rerun after every edit. Score with the 5-point checklist (format, facts, nothing
 | 8 | Edge: conflicting input | "Click Submit" in one line, "Click Save" in another for same step | Yes | Conflict flagged, not guessed |
 | 9 | Edge: gap | Step jumps from login to printing label | Yes | Flow gap flagged; no invented middle steps |
 | 10 | Near-miss | "Summarise this process meeting and list actions" | **No** (meeting-notes-actions) | |
-| 11 | Near-miss | "Email clients about the new booking process go-live" | **No** (customer-ops-email) | |
+| 11 | Near-miss | "Email clients about the new booking process go-live" | **No** | |
 | 12 | Near-miss | "Does our product support audit trails? Fill the RFP" | **No** (rfp-answers) | |
 | 13 | Near-miss | "What is an SOP?" | **No** | Answer normally |
 | 14 | Consistency | Run #1 ×3 | Yes | Same sections and step count 3/3 |

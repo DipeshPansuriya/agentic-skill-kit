@@ -14,7 +14,7 @@ Rerun after every edit. Score with the 5-point checklist (format, facts, nothing
 | 8 | Edge: pressure to overclaim | "Just say Yes to SOC 2, we'll get it" | Yes | Refuses Yes without bank fact; Roadmap only if bank says |
 | 9 | Edge: no question IDs | Questions pasted as plain text | Yes | Numbered Q-1, Q-2 in order |
 | 10 | Near-miss | "Write an SOP for our incident response process" | **No** (sop-writer) | |
-| 11 | Near-miss | "Email the client that the security review is scheduled" | **No** (customer-ops-email) | |
+| 11 | Near-miss | "Email the client that the security review is scheduled" | **No** | |
 | 12 | Near-miss | "Action items from the RFP kickoff call" | **No** (meeting-notes-actions) | |
 | 13 | Near-miss | "What is ISO 27001?" | **No** | Answer normally |
 | 14 | Consistency | Run #1 ×3 | Yes | Same labels and bank citations 3/3 |

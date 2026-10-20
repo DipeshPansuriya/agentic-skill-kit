@@ -5,7 +5,7 @@ A plugin of 24 skills that Claude uses automatically when a request matches. The
 | Group | Skills |
 |---|---|
 | Building skills | create-skill, combine-skills, benchmark-skill |
-| Comms | weekly-status-report, meeting-notes-actions, customer-ops-email, sop-writer, rfp-answers |
+| Comms | weekly-status-report, meeting-notes-actions, sop-writer, rfp-answers |
 | Delivery | incident-rca, requirements-to-stories, release-notes, test-cases-from-requirements, kpi-analysis |
 | Engineering | code-review, software-architecture, workflow-design, backend-engineering (.NET, Java, Python), frontend-engineering (React, Angular), database-engineering (MS-SQL, PostgreSQL, NoSQL), sql-performance-tuning, code-performance, refactoring, security-review-fix, playwright-testing |
 

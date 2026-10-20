@@ -14,7 +14,7 @@ Rerun after every edit. Score with the 5-point checklist (format, facts, nothing
 | 8 | Edge: conflicting input | Decision made, then reversed later in notes | Yes | Final decision kept with "(changed from X)" |
 | 9 | Edge: IDs | Notes with AWB 176-12345675, ULD AKE12345XY | Yes | IDs copied exactly |
 | 10 | Near-miss | "Write my weekly status report from these notes" | **No** (weekly-status-report) | |
-| 11 | Near-miss | "Send client a delay notice for AWB 176-12345675" | **No** (customer-ops-email) | |
+| 11 | Near-miss | "Send client a delay notice for AWB 176-12345675" | **No** | |
 | 12 | Near-miss | "Turn these steps into an SOP" | **No** (sop-writer) | |
 | 13 | Near-miss | "How do I run a good meeting?" | **No** | Answer normally |
 | 14 | Consistency | Run #1 ×3 | Yes | Same sections, same actions and owners 3/3 |

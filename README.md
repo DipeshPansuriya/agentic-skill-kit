@@ -17,7 +17,7 @@ Skills load automatically when a request matches. You can also call one directly
 ### Plugin: `agentic-skill-kit`
 | Group | Skills |
 |---|---|
-| **Comms** | `weekly-status-report`, `meeting-notes-actions`, `customer-ops-email`, `sop-writer`, `rfp-answers` |
+| **Comms** | `weekly-status-report`, `meeting-notes-actions`, `sop-writer`, `rfp-answers` |
 | **Delivery** | `requirements-to-stories`, `release-notes`, `test-cases-from-requirements`, `kpi-analysis` |
 | **Engineering** | `code-review`, `software-architecture` (incl. design patterns), `workflow-design`, `backend-engineering` (.NET, Java, Python), `frontend-engineering` (React, Angular), `database-engineering` (MS-SQL, PostgreSQL, NoSQL), `sql-performance-tuning`, `code-performance`, `refactoring`, `security-review-fix`, `playwright-testing` |
 | **UI / store** | `web-design`, `modern-enterprise-ui`, `anatomy`, `goldie`, `video-avatar`, `room-redesign` |
