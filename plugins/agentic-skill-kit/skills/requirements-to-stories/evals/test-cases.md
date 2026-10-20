@@ -15,5 +15,5 @@ Rerun after every edit. Score each with the 0–5 quality checklist (format, fac
 | 9 | Near-miss | "Write test cases for story ST-12" | **No** (test-cases-from-requirements) | |
 | 10 | Near-miss | "Draft release notes for sprint 14 stories" | **No** (release-notes) | |
 | 11 | Near-miss | "What is the INVEST principle?" | **No** | Answer normally |
-| 12 | Near-miss | "Write a status update on the backlog" | **No** (weekly-status-report) | |
+| 12 | Near-miss | "Write a status update on the backlog" | **No** | |
 | 13 | Consistency | Run #1 ×3 | Yes | Same epics and story count 3/3 |

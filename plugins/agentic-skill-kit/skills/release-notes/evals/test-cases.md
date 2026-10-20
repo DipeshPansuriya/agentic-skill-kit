@@ -15,5 +15,5 @@ Rerun after every edit. Score each with the 0–5 quality checklist (format, fac
 | 9 | Near-miss | "Write an RCA for last night's failed deployment" | **No** (incident-rca) | |
 | 10 | Near-miss | "Turn this BRD into user stories" | **No** (requirements-to-stories) | |
 | 11 | Near-miss | "Explain Conventional Commits" | **No** | Answer normally |
-| 12 | Near-miss | "Write my weekly status for the release team" | **No** (weekly-status-report) | |
+| 12 | Near-miss | "Write my weekly status for the release team" | **No** | |
 | 13 | Consistency | Run #2 ×3 | Yes | Same categories and item counts 3/3 |
