@@ -5,13 +5,11 @@ A plugin of 24 skills that Claude uses automatically when a request matches. The
 | Group | Skills |
 |---|---|
 | Building skills | create-skill, combine-skills, benchmark-skill |
-| Comms | weekly-status-report, meeting-notes-actions, customer-ops-email, sop-writer, rfp-answers |
-| Delivery | incident-rca, requirements-to-stories, release-notes, test-cases-from-requirements, kpi-analysis |
+| Comms | weekly-status-report, customer-ops-email, sop-writer |
+| Delivery | incident-rca, requirements-to-stories, release-notes, test-cases-from-requirements |
 | Engineering | code-review, software-architecture, workflow-design, backend-engineering (.NET, Java, Python), frontend-engineering (React, Angular), database-engineering (MS-SQL, PostgreSQL, NoSQL), sql-performance-tuning, code-performance, refactoring, security-review-fix, playwright-testing |
 
 ## Before first use
-- **rfp-answers:** fill `skills/rfp-answers/references/answer-bank.md` with approved product facts. Until then, answers come back as "Needs input".
-- **kpi-analysis:** its script needs pandas.
 - **refactoring:** uses the ponytail plugin if it's installed, and asks before installing it if not.
 - **Overlap with built-in skills:** skill-creator, internal-comms and doc-coauthoring overlap with create-skill/benchmark-skill, weekly-status-report/incident-rca and sop-writer. Turn the built-in ones off if the wrong skill is used.
 

@@ -1,6 +1,6 @@
 ---
 name: video-avatar
-description: "Use when the user wants a cartoon talking-head avatar (hoodie, glasses, teaching pose) and a local screen-record/edit for a video. Not for store preview clips (use goldie) or HeyGen unless he names it."
+description: "Use when the user wants a cartoon talking-head avatar (hoodie, glasses, teaching pose) and a local screen-record/edit for a video. Not for store preview clips or HeyGen unless he names it."
 user-invocable: true
 ---
 

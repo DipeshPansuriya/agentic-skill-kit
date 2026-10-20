@@ -1,6 +1,6 @@
 # Agentic Skill Kit
 
-A Claude Code plugin marketplace with **39 skills** for day-to-day engineering and work communication. It also includes an optional **guard** plugin with safety hooks, a **CI/CD quality gate**, and guides on how to build and benchmark your own skills.
+A Claude Code plugin marketplace with **35 skills** for day-to-day engineering and work communication. It also includes an optional **guard** plugin with safety hooks, a **CI/CD quality gate**, and guides on how to build and benchmark your own skills.
 
 ## Install (Claude Code / VS Code / Cursor)
 
@@ -17,10 +17,10 @@ Skills load automatically when a request matches. You can also call one directly
 ### Plugin: `agentic-skill-kit`
 | Group | Skills |
 |---|---|
-| **Comms** | `weekly-status-report`, `meeting-notes-actions`, `customer-ops-email`, `sop-writer`, `rfp-answers` |
-| **Delivery** | `requirements-to-stories`, `release-notes`, `test-cases-from-requirements`, `kpi-analysis` |
+| **Comms** | `weekly-status-report`, `customer-ops-email`, `sop-writer` |
+| **Delivery** | `requirements-to-stories`, `release-notes`, `test-cases-from-requirements` |
 | **Engineering** | `code-review`, `software-architecture` (incl. design patterns), `workflow-design`, `backend-engineering` (.NET, Java, Python), `frontend-engineering` (React, Angular), `database-engineering` (MS-SQL, PostgreSQL, NoSQL), `sql-performance-tuning`, `code-performance`, `refactoring`, `security-review-fix`, `playwright-testing` |
-| **UI / store** | `web-design`, `modern-enterprise-ui`, `anatomy`, `goldie`, `video-avatar`, `room-redesign` |
+| **UI / store** | `web-design`, `modern-enterprise-ui`, `anatomy`, `video-avatar`, `room-redesign` |
 | **Spec Kit** | `speckit-specify`, `speckit-plan`, `speckit-tasks`, `speckit-implement`, `speckit-analyze`, `speckit-clarify`, `speckit-checklist`, `speckit-constitution`, `speckit-converge`, `speckit-taskstoissues` |
 | **Data / integration** | `stack-java-spring-react`, `database-engineering`, `sql-performance-tuning` |
 | **Guidelines / GTM / pentest** | `karpathy-guidelines`, `strix-pentest` |
@@ -50,7 +50,7 @@ How to create a skill, combine skills, and benchmark a skill.
 
 ## Requirements
 - Claude Code (CLI, VS Code or Cursor extension)
-- Python 3.10+ for the helper scripts (`kpi-analysis` also needs `pandas`)
+- Python 3.10+ for the helper scripts
 
 ## Contributing and security
 - [CONTRIBUTING.md](CONTRIBUTING.md) explains how to propose changes. Every PR runs the validation workflow.
