@@ -8,7 +8,7 @@ Two meanings, both mandatory: (1) tests do not leak state into each other or acr
 - **No seed data, no tenant-keyed seed.** Each scenario creates its own records through the UI or API and gives them unique names. Writing test data straight into the database is refused unless an explicit flag allows it.
 - **Every cache keyed by tenant** (`templates/cache.ts`):
   - auth state `.e2e-state/auth/<tenant>/<role>.json` with a TTL (30 min in the reviewed suite);
-  - prerequisite cache keyed by tenant with a TTL shorter than the data rollover (20 h so a cached job cannot outlive the business-day or flight-date boundary); only read-only artifacts are cached; the file stores its tenant id and `readPrereq` throws on mismatch (a reviewed note: "a run handed another tenant's record fails at a grid filter");
+  - prerequisite cache keyed by tenant with a TTL shorter than the data rollover (20 h so a cached job cannot outlive the business-day or reservation-window boundary); only read-only artifacts are cached; the file stores its tenant id and `readPrereq` throws on mismatch (a reviewed note: "a run handed another tenant's record fails at a list filter");
   - bundle or asset caches keyed by host + path, content-hashed files only.
   Keying auth by tenant id, not by host, matters when several environments share one host and the tenant comes from the credentials.
 - **Result files namespaced** `tenant-runId` (`resultFile()`), so parallel jobs and reruns never overwrite each other.
@@ -31,6 +31,9 @@ Required patterns, UI and API:
 9. **Role boundary inside a tenant** (a read-only role cannot write) as the neighbouring check.
 
 Rules:
+- Destructive calls (update, delete with the victim's id) run only after the read check proved the id does not resolve in the attacker tenant; with sequential ids the same number may be the attacker's own record, so prefer GUID ids and keep a canary record that must survive. Non-production data only. Prefer dedicated users and run isolation in its own job so its cleanup cannot disturb other specs.
+- A replay test builds Cookie/Authorization headers explicitly from the stored state (`templates/isolation-helpers.ts`): storage-state cookies are domain-scoped and an API context never sends local-storage tokens, so loading the state against another host sends nothing and passes vacuously. Always add a control request that must succeed on the home host.
+- Wait for a positive denied state in the UI (a not-found or access-denied message) before asserting a marker is absent.
 - Isolation tests must **fail, not skip**, when a session is missing; a skipped isolation test is a false green. The only legitimate skip is the self pair (`attacker === victim`) with a reason.
 - Create the victim record with a unique marker (`ctx.unique('isolation')`) and delete it in `finally`, on staging data only.
 - Assert on the marker in response bodies and the DOM, not only on status codes.

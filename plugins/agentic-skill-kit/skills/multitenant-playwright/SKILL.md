@@ -1,6 +1,6 @@
 ---
 name: multitenant-playwright
-description: Build or retrofit a multi-tenant Playwright suite: tenant registry, per-tenant projects or jobs, isolation specs, continue-all runs, matrix reports. Use when the user asks to test many tenants, customers or environments in one run.
+description: "Build or retrofit a multi-tenant Playwright suite: tenant registry, per-tenant projects or jobs, isolation specs, matrix reports. Use when the user asks to test many tenants in one run. Not for single-tenant specs or pentests."
 ---
 
 # Multi-tenant Playwright

@@ -8,13 +8,15 @@ Sketches are GitHub Actions syntax; the structure is vendor-neutral. Files: `tem
 **Model B** (three stages):
 1. `decide`: `decide-cli.ts` reads the registry, picks tenants by schedule token or manual selection, emits `matrix` and the expected `tenants` list. It fails when nothing is selected.
 2. `tenant` jobs: one per matrix entry, `TENANTS` and `REPORT_DIR` per job, `fail-fast: false`, timeout from the registry, own credentials secret, same steps as Model A, result from that tenant's summary.
+   Per-tenant jobs set `EXCLUDE_MODULES=isolation`. A dedicated `isolation` job runs `TENANTS=<all chosen> MODULES=isolation` with a secret that holds the pair's credentials (skipped when fewer than two tenants are chosen); its summary merges with the tenant's own summary in `combine`.
+   Every job ends with `check-summary.ts` and `STEP_OUTCOMES` (`tests`, `scrub`): the job fails on a bad summary, a timed-out or interrupted run, or a failed scrub, and artifacts publish only after a successful scrub.
 3. `combine`: runs when decide succeeded (`always()`), downloads every tenant's artifact, runs `combine-cli.ts` with `EXPECTED` from decide; a tenant with no artifact fails the pipeline. Publishes the matrix to the job summary.
 
 ## Equivalents
 | Concept | GitHub Actions | Azure DevOps |
 |---|---|---|
 | Schedule + manual | `schedule`, `workflow_dispatch` | `schedules:` with `displayName`, manual run parameters |
-| Schedule name for decide | cron string only (map cron to a name in a data file, or one workflow per schedule) | `Build.CronSchedule.DisplayName` |
+| Schedule name for decide | cron string only: map it with `ci/schedules.json` (`decide-cli.ts --cron ... --schedule-map`), guarded by a unit test | `Build.CronSchedule.DisplayName` |
 | Dynamic matrix | `strategy.matrix: ${{ fromJSON(needs.decide.outputs.matrix) }}` | `strategy: matrix: $[ dependencies.decide.outputs['stepName.matrix'] ]`, output set with `##vso[task.setvariable ...;isOutput=true]` (`--format azure`) |
 | Job per tenant, never fail-fast | `fail-fast: false` | jobs are independent; do not use `dependsOn` between tenants |
 | Continue then publish | `continue-on-error: true` + `if: always()` | `continueOnError: true` + `condition: always()` |
@@ -38,7 +40,7 @@ Publish results as artifacts (or to a results branch/storage), **not** by commit
 
 ## Triggers and policy
 - Scheduled and manual only for live environments; no PR trigger on them.
-- Booking-like specs consume real slots and credits: gate them per tenant with a data-driven policy and run window (for example `always` vs `full-only`, window evaluated in the tenant's zone via `Intl.DateTimeFormat`), not by tribal knowledge.
+- Reservation-like specs consume real slots and credits: gate them per tenant with a data-driven policy and run window (for example `always` vs `full-only`, window evaluated in the tenant's zone via `Intl.DateTimeFormat`), not by tribal knowledge.
 - Per-tenant run lists as data (`ci/in-scope/<tenant>.json`) with a drift gate (listed-but-missing, in-both-lists, pass naming a spec not in scope) are optional; strict in PR and local runs, a warning in the nightly. A spec for the wrong tenant once cost another tenant two nights.
 - Wall time: set a per-tenant timeout from the registry; the longest observed run was 176 min against a 240 min cap.
 

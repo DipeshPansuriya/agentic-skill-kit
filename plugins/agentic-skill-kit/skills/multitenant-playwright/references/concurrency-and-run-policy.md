@@ -10,7 +10,7 @@
 | Resource | Policy | Why |
 |---|---|---|
 | Login endpoint with a per-IP rate limit (5 per IP per minute in one suite) | Log in once per role per TTL via `storageState`; run setup serially | 27 logins per run became about 3 |
-| Shared slot or global counter (booking slots, sequence numbers) | Serial within the tenant, or a lock around the critical section | The app clears a form and the new number is learned as "the row that appeared" |
+| Shared slot or global counter (reservation slots, sequence numbers) | Serial within the tenant, or a lock around the critical section | The app clears a form and the new number is learned as "the row that appeared" |
 | Per-environment limits | **Tenants in parallel**, tests within a tenant serial where needed | Limits are per environment, not global |
 | Pure read tests | Parallel | No shared state |
 Record the real reason in a short ADR and correct it when wrong: one suite's first rationale (session eviction) was disproved and the ADR kept the correction.

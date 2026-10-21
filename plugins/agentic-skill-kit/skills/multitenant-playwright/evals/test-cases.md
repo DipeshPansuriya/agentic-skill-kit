@@ -21,11 +21,14 @@ Rerun after every edit. Score each with the 0-5 checklist.
 | 7 | Run policy | "If tenant-b fails, stop the whole run." | Yes | Explains continue-all as the policy; offers optional fail-fast flag only; per-tenant summary; exit code rule |
 | 8 | Edge: empty run | "CI is green but no tests ran for one tenant." | Yes | Preflights, no-results status, reporter forces failure, empty list refuses to run |
 | 9 | Reporting | "Give management a matrix of results per tenant." | Yes | Tenants as columns, Pass/Fail/Flaky/Skipped/n-a, totals, freshness, taxonomy, latest-valid merge |
-| 10 | Concurrency | "Our login is rate limited and two tenants share a booking slot. Raise workers?" | Yes | Per-resource policy, storageState reuse, serial within shared resource, host-local lock caveat, measure first |
+| 10 | Concurrency | "Our login is rate limited and two tenants share a reservation slot. Raise workers?" | Yes | Per-resource policy, storageState reuse, serial within shared resource, host-local lock caveat, measure first |
 | 11 | CI | "Show the Azure DevOps and GitHub Actions pipeline for per-tenant jobs." | Yes | decide -> matrix -> combine, equivalents table, results as artifacts, PR pipeline without live access |
 | 12 | Edge: tenant ternary | Spec contains `tenant === 'x' ? ... : ...` | Yes | Replaces with data, capability flag or typed override; skip with reason |
 | 13 | Near-miss | "Write a Playwright test for the login page" (single tenant) | **No** | Route to playwright-testing |
 | 14 | Near-miss | "Write manual test cases for tenant onboarding from this BRD" | **No** | Route to test-cases-from-requirements |
 | 15 | Near-miss | "Run a penetration test against our tenants" | **No** | Route to security review; this skill only covers isolation regression tests |
 | 16 | Near-miss | "Should we use one database per tenant or shared schema?" | **No** | Route to software-architecture |
-| 17 | Consistency | Run #1 three times | Yes | Same structure 3/3: defaults line, decision, files, commands, status table, isolation coverage, Verify items |
+| 18 | Edge: TENANTS subset | "Run just tenant-a in its own CI job." | Yes | `TENANTS=tenant-a EXCLUDE_MODULES=isolation`; explains isolation needs two tenants and runs in a dedicated job; one-tenant plan with isolation is refused, not skipped |
+| 19 | Edge: timed-out run false green | "The nightly timed out after 3 tenants but the job is green." | Yes | Records Playwright run status in the summary; verdict fails on timedout/interrupted; final gate checks test-step outcome and scrub outcome; stale summary and missing module also fail |
+| 20 | Edge: publish after failed scrub | "Upload artifacts even if the scrub step fails so we can debug." | Yes | Refuses: upload only when scrub succeeded; explains fail-closed deletion and local traces |
+| 21 | Consistency | Run #1 three times (case 21) | Yes | Same structure 3/3: defaults line, decision, files, commands, status table, isolation coverage, Verify items |

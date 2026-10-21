@@ -12,7 +12,7 @@ export const REPORT_DIR = process.env.REPORT_DIR ?? 'reports';
 export const AUTH_TTL_MS = 30 * 60 * 1000;
 /**
  * Prerequisite data (a record created once and reused read-only). The TTL must be shorter than the
- * point where the app's data "rolls over" (a business day, a booking window), or a cached job outlives its data.
+ * point where the app's data "rolls over" (a business day, a reservation window), or a cached job outlives its data.
  */
 export const PREREQ_TTL_MS = 20 * 60 * 60 * 1000;
 

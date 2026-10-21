@@ -1,6 +1,6 @@
 # agentic-skill-kit (v1.0.0)
 
-A plugin of 24 skills that Claude uses automatically when a request matches. There are no connectors or setup steps.
+A plugin of 32 skills that Claude uses automatically when a request matches. There are no connectors or setup steps.
 
 | Group | Skills |
 |---|---|
@@ -15,7 +15,7 @@ A plugin of 24 skills that Claude uses automatically when a request matches. The
 Reports, documents, emails and slides use neutral formatting. A brand or company design skill is applied only when you name it in your request.
 
 ## Quality
-- All 24 skills pass the kit validator.
+- All 32 skills pass the kit validator.
 - Every skill has `evals/test-cases.md`, including cases where it should not trigger.
 - The scanners were tuned on real open-source repos.
 - The CI/CD gate lives in the repository's `ci/` folder. Optional safety hooks are in the `agentic-skill-kit-guard` plugin.

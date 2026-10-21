@@ -10,7 +10,7 @@ A small script over the shared steps folder, run in the PR pipeline:
 - Add the Playwright ESLint rules `missing-playwright-await` and `no-focused-test` as errors.
 
 ## Ratchet baselines (only fall)
-Count debt such as `waitForTimeout` calls, `force: true` clicks, raw locators, untagged tests. Commit the counts in a baseline file; the lint fails when a count rises and tells you to lower the baseline when it falls. A reviewed suite had 476 sleeps and 55 force clicks held by ratchets, not eliminated; the ratchet stops growth, it does not fix the debt.
+Count debt such as `waitForTimeout` calls, `force: true` clicks, raw locators, untagged tests. Commit the counts in a baseline file; the lint fails when a count rises and tells you to lower the baseline when it falls. A reviewed suite held hundreds of fixed sleeps and dozens of forced clicks with ratchets rather than eliminating them; the ratchet stops growth, it does not fix the debt.
 
 ## Contract tests so CI and registry cannot drift
 - `decide()` against the real registry: whole-word token match, unknown id, empty selection throws.

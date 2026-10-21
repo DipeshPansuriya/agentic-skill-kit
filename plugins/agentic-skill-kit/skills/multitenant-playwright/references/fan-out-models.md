@@ -52,5 +52,6 @@ No spec changes are needed; if one is, a spec read tenant state at module load: 
 ## Verify list (not proven by the reviews)
 - `--project` accepts glob patterns like `tenant-a__*` in your Playwright version.
 - `RUN_ID` set in `globalSetup` reaches workers (the templates fall back to a per-process id).
-- `config.projects` in a reporter lists only the projects selected on the command line.
+- Subset runs: use `TENANTS`, `MODULES` and `EXCLUDE_MODULES` (verified on 1.56.1 with `--list` and real runs). The reporter takes expected tenants and modules from the suite tree, i.e. the selected projects; a `--project` filter is **unverified** here, and `config.projects` itself lists ALL projects, so do not build "expected" from it.
+- Isolation specs need two tenants in one process: per-tenant jobs set `EXCLUDE_MODULES=isolation`, and one dedicated job runs `TENANTS=a,b MODULES=isolation`. A one-tenant plan that still contains isolation throws.
 - `secrets[matrix.name]` dynamic lookup in your CI product.
