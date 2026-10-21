@@ -1,0 +1,70 @@
+# MODEL A: one pipeline job, ONE Playwright process, one project per tenant x module (generated from the registry).
+# GitHub Actions syntax. Azure DevOps equivalents are in references/ci.md.
+#
+# Rules this sketch encodes:
+#  - no PR trigger: live environments are only touched by schedule or manual runs;
+#  - no tenant id appears in this file (contract test: unit-decide.spec.ts);
+#  - secrets only via the secret store; the credentials file is written at job start and removed in an always() step;
+#  - the test step is continue-on-error so reports and artifacts still publish;
+#  - the job result is derived from summary.json in a final always() step.
+name: e2e-all-tenants
+on:
+  schedule:
+    - cron: '0 20 * * 0-4'
+  workflow_dispatch:
+    inputs:
+      tenants:
+        description: 'Comma list of tenant ids; empty = all'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      CI: 'true'
+      TENANTS: ${{ github.event.inputs.tenants }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Unit tests of pure logic
+        run: UNIT=1 npx playwright test --project=unit
+
+      - name: Write credentials file (all tenants, one JSON map of variable names to values)
+        env:
+          E2E_CREDENTIALS_JSON: ${{ secrets.E2E_CREDENTIALS }}
+        run: |
+          umask 077
+          printf '%s' "$E2E_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
+          echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
+
+      - name: Run every selected tenant (continue-all)
+        id: tests
+        continue-on-error: true
+        run: npx playwright test
+
+      - name: Scrub secret values from artifacts (fails closed)
+        if: always()
+        run: npx tsx scrub-artifacts.ts reports
+      - name: Publish reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports
+          path: reports
+          retention-days: 14
+      - name: Remove credentials file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/credentials.json"
+      - name: Job result comes from the per-tenant summary
+        if: always()
+        run: npx tsx check-summary.ts reports/summary.json

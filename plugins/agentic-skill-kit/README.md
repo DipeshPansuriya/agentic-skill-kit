@@ -6,7 +6,7 @@ A plugin of 24 skills that Claude uses automatically when a request matches. The
 |---|---|
 | Building skills | create-skill, combine-skills, benchmark-skill |
 | Delivery | incident-rca, requirements-to-stories, release-notes, test-cases-from-requirements |
-| Engineering | code-review, software-architecture, workflow-design, backend-engineering (.NET, Java, Python), frontend-engineering (React, Angular), database-engineering (MS-SQL, PostgreSQL, NoSQL), sql-performance-tuning, code-performance, refactoring, security-review-fix, playwright-testing |
+| Engineering | code-review, software-architecture, workflow-design, backend-engineering (.NET, Java, Python), frontend-engineering (React, Angular), database-engineering (MS-SQL, PostgreSQL, NoSQL), sql-performance-tuning, code-performance, refactoring, security-review-fix, playwright-testing, multitenant-playwright |
 
 ## Before first use
 - **refactoring:** uses the ponytail plugin if it's installed, and asks before installing it if not.

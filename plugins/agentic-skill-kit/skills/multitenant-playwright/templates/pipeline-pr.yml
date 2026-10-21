@@ -1,0 +1,34 @@
+# PR pipeline: never touches a live environment, needs no secrets, runs in minutes.
+# It guards the architecture (registry, CI contract, pure logic) so a bad PR cannot reach the nightly runs.
+name: e2e-pr-checks
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PIPELINE_FILE: .github/workflows/e2e-nightly.yml
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Architecture lint (hard rules + ratchet baseline)
+        run: npx tsx lint-architecture.ts steps lint-baseline.json
+      - name: Unit and contract tests (registry, decide, summary, pipeline file)
+        run: UNIT=1 npx playwright test --project=unit
+      - name: Projects generate for every tenant (no browser, no network)
+        run: npx playwright test --list
+      - name: Open todo report (informational)
+        run: npx tsx todos-cli.ts

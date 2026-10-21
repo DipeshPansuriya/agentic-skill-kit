@@ -18,7 +18,7 @@ Skills load automatically when a request matches. You can also call one directly
 | Group | Skills |
 |---|---|
 | **Delivery** | `requirements-to-stories`, `release-notes`, `test-cases-from-requirements |
-| **Engineering** | `code-review`, `software-architecture` (incl. design patterns), `workflow-design`, `backend-engineering` (.NET, Java, Python), `frontend-engineering` (React, Angular), `database-engineering` (MS-SQL, PostgreSQL, NoSQL), `sql-performance-tuning`, `code-performance`, `refactoring`, `security-review-fix`, `playwright-testing` |
+| **Engineering** | `code-review`, `software-architecture` (incl. design patterns), `workflow-design`, `backend-engineering` (.NET, Java, Python), `frontend-engineering` (React, Angular), `database-engineering` (MS-SQL, PostgreSQL, NoSQL), `sql-performance-tuning`, `code-performance`, `refactoring`, `security-review-fix`, `playwright-testing`, `multitenant-playwright` |
 | **UI / store** | `web-design`, `modern-enterprise-ui`, `anatomy, `video-avatar`, `room-redesign` |
 | **Spec Kit** | `speckit-specify`, `speckit-plan`, `speckit-tasks`, `speckit-implement`, `speckit-analyze`, `speckit-clarify`, `speckit-checklist`, `speckit-constitution`, `speckit-converge`, `speckit-taskstoissues` |
 | **Data / integration** | `stack-java-spring-react`, `database-engineering`, `sql-performance-tuning` |

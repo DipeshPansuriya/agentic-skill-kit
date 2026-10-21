@@ -1,0 +1,124 @@
+# MODEL B: decide -> one job per tenant (process per tenant, tenant via TENANTS) -> combine.
+# GitHub Actions syntax. Azure DevOps equivalents are in references/ci.md.
+#
+# The matrix is produced by decide-cli.ts from the registry. No tenant id appears in this file.
+# A schedule is selected by a name token (the registry's ci.scheduleToken). GitHub gives the cron string, not a
+# display name: keep a small cron -> name data file, or one workflow per schedule, and assert in
+# unit-decide.spec.ts that every schedule name selects at least one tenant. Azure DevOps exposes the
+# schedule display name directly (Build.CronSchedule.DisplayName).
+name: e2e-per-tenant
+on:
+  schedule:
+    - cron: '0 20 * * 0-4'
+  workflow_dispatch:
+    inputs:
+      tenants:
+        description: 'Comma list of tenant ids (manual runs); empty is refused'
+        required: false
+        default: ''
+      schedule_name:
+        description: 'Schedule name to emulate (optional)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.d.outputs.matrix }}
+      tenants: ${{ steps.d.outputs.tenants }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - id: d
+        name: Decide (fails when nothing is selected)
+        env:
+          SCHEDULE_NAME: ${{ github.event.inputs.schedule_name || github.event.schedule }}
+          MANUAL_TENANTS: ${{ github.event.inputs.tenants }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            npx tsx decide-cli.ts --reason schedule --schedule "$SCHEDULE_NAME" --format github
+          else
+            npx tsx decide-cli.ts --reason manual --manual "$MANUAL_TENANTS" --format github
+          fi
+
+  tenant:
+    needs: decide
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false          # a failing tenant never stops the others
+      matrix: ${{ fromJSON(needs.decide.outputs.matrix) }}
+    timeout-minutes: ${{ matrix.timeout }}
+    env:
+      CI: 'true'
+      TENANTS: ${{ matrix.tenant }}
+      REPORT_DIR: reports/${{ matrix.tenant }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Write this tenant's credentials file
+        env:
+          TENANT_CREDENTIALS_JSON: ${{ secrets[matrix.credentialsSecret] }}
+        run: |
+          umask 077
+          printf '%s' "$TENANT_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
+          echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
+      - name: Run this tenant
+        continue-on-error: true
+        run: npx playwright test
+      - name: Scrub secret values from artifacts (fails closed)
+        if: always()
+        run: npx tsx scrub-artifacts.ts "reports/${{ matrix.tenant }}"
+      - name: Publish this tenant's results (artifact, never committed to main)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ matrix.tenant }}
+          path: reports/${{ matrix.tenant }}
+          retention-days: 30
+      - name: Remove credentials file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/credentials.json"
+      - name: Job result comes from this tenant's summary
+        if: always()
+        run: npx tsx check-summary.ts "reports/${{ matrix.tenant }}/summary.json"
+
+  combine:
+    needs: [decide, tenant]
+    if: ${{ always() && needs.decide.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXPECTED: ${{ needs.decide.outputs.tenants }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-results
+          pattern: results-*
+      - name: Merge and derive the pipeline result (a tenant with no results fails)
+        run: npx tsx combine-cli.ts all-results combined
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: combined
+          path: combined
+          retention-days: 30
