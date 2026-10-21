@@ -16,8 +16,14 @@ let fileCache: Record<string, string> | undefined;
 function fromFile(name: string): string | undefined {
   const file = process.env.CREDENTIALS_FILE;
   if (!file) return undefined;
-  fileCache ??= JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, string>;
-  return fileCache[name];
+  try {
+    // An empty, missing or malformed file (or one starting with a byte-order mark) counts as "no values",
+    // so every role is unusable and the tenant fails its preflight; it never throws out of the lookup.
+    fileCache ??= JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, string>;
+    return fileCache[name];
+  } catch {
+    return undefined;
+  }
 }
 
 const lookup = (name: string): string | undefined => process.env[name] ?? fromFile(name);

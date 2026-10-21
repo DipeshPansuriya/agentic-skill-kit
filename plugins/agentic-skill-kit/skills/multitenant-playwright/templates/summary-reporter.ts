@@ -18,10 +18,15 @@ import {
 /**
  * Tenant-aware summary reporter.
  *  - Derives tenant and module from the PROJECT NAME (project-name.ts), so a new tenant needs no change here.
+ *  - Expected tenants and modules come from the projects actually SELECTED for this run (the suite tree),
+ *    so --project filters and TENANTS subsets both work.
  *  - Never throws: a reporting bug must not turn a green run red or hide a red one.
  *  - Does nothing under --list or when no tenant project exists (unit-only runs).
  *  - Appends each finished test to a per-tenant case log immediately (kill-resilient).
- *  - A tenant that ran nothing, or whose environment is down, makes the run FAIL even if Playwright says passed.
+ *  - Records Playwright's run status; a timed-out or interrupted run can never read as green.
+ *  - A tenant that ran nothing, has a module that reported nothing, or whose environment is down, makes the
+ *    run FAIL even if Playwright says passed.
+ *  - Clears the previous summary at start so a crash can never leave a stale green file behind.
  */
 // eslint-disable-next-line no-control-regex
 const ANSI = /\u001b\[[0-9;]*m/g;
@@ -31,16 +36,30 @@ class SummaryReporter implements Reporter {
   private runId = process.env.RUN_ID ?? new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
   private startedAt = new Date().toISOString();
   private expected: string[] = [];
+  /** tenant -> modules that have at least one planned test in this run (setup excluded). */
+  private readonly plannedModules = new Map<string, Set<string>>();
   private readonly cases = new Map<string, CaseResult[]>();
 
-  onBegin(config: FullConfig, _suite: Suite): void {
+  onBegin(_config: FullConfig, suite: Suite): void {
     this.safely(() => {
       this.runId = process.env.RUN_ID ?? this.runId;
-      const ids = config.projects.map((p) => parseProjectName(p.name)?.tenantId).filter((x): x is string => !!x);
-      this.expected = [...new Set(ids)];
+      const tenants = new Set<string>();
+      for (const projectSuite of suite.suites) {
+        const parsed = parseProjectName(projectSuite.project()?.name ?? '');
+        if (!parsed) continue;
+        tenants.add(parsed.tenantId);
+        if (parsed.module !== SETUP_MODULE && projectSuite.allTests().length > 0) {
+          const set = this.plannedModules.get(parsed.tenantId) ?? new Set<string>();
+          set.add(parsed.module);
+          this.plannedModules.set(parsed.tenantId, set);
+        }
+      }
+      this.expected = [...tenants];
+      if (this.disabled) return;
+      for (const f of ['summary.json', 'summary.md']) fs.rmSync(path.join(REPORT_DIR, f), { force: true });
       for (const id of this.expected) {
         this.cases.set(id, []);
-        if (!this.disabled) appendCaseLine({ kind: 'begin', tenantId: id, runId: this.runId, at: new Date().toISOString() });
+        appendCaseLine({ kind: 'begin', tenantId: id, runId: this.runId, at: new Date().toISOString() });
       }
     });
   }
@@ -72,13 +91,10 @@ class SummaryReporter implements Reporter {
 
   async onEnd(result: FullResult): Promise<{ status?: FullResult['status'] } | undefined> {
     try {
-      const executed = [...this.cases.values()].some((c) => c.length > 0);
-      if (this.disabled || this.expected.length === 0 || !executed) {
-        if (!this.disabled && this.expected.length > 0) console.error('[summary] no test results were recorded for any tenant');
-        return !this.disabled && this.expected.length > 0 && result.status === 'passed' ? { status: 'failed' } : undefined;
-      }
+      if (this.disabled || this.expected.length === 0) return undefined;
       const summary: Summary = {
         runId: this.runId,
+        runStatus: result.status,
         startedAt: this.startedAt,
         finishedAt: new Date().toISOString(),
         expected: this.expected,
@@ -89,8 +105,9 @@ class SummaryReporter implements Reporter {
         if (list.length === 0) continue; // ran nothing: stays absent so verdict() reports it
         const marker = readMarker(id);
         const setupFailed = list.some((c) => c.module === SETUP_MODULE && c.outcome === 'failed');
-        const notes = setupFailed ? ['setup failed: this tenant\'s module projects did not run'] : [];
-        summary.tenants[id] = buildTenantSummary(id, list, marker, notes);
+        const notes = setupFailed ? ["setup failed: this tenant's module projects did not run"] : [];
+        const missing = [...(this.plannedModules.get(id) ?? [])].filter((m) => !list.some((c) => c.module === m));
+        summary.tenants[id] = buildTenantSummary(id, list, marker, notes, missing);
       }
       fs.mkdirSync(REPORT_DIR, { recursive: true });
       fs.writeFileSync(path.join(REPORT_DIR, 'summary.json'), JSON.stringify(summary, null, 2));
@@ -98,7 +115,7 @@ class SummaryReporter implements Reporter {
       for (const id of this.expected) appendCaseLine({ kind: 'end', tenantId: id, runId: this.runId, at: new Date().toISOString() });
 
       const v = verdict(summary);
-      console.log(`\nPer-tenant result (run ${this.runId})\n${v.lines.join('\n')}`);
+      console.log(`\nPer-tenant result (run ${this.runId}, Playwright status: ${result.status})\n${v.lines.join('\n')}`);
       if (!v.ok) console.log(`Problems: ${v.problems.join('; ')}`);
       return !v.ok && result.status === 'passed' ? { status: 'failed' } : undefined;
     } catch (e) {

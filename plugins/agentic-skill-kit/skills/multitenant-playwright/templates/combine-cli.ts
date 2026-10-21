@@ -42,8 +42,14 @@ fs.writeFileSync(path.join(out, 'summary.md'), md + '\n');
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n');
 
 const v = verdict(merged);
+const problems = [...v.problems];
+// NEEDS_RESULTS="tenant:success,isolation:skipped": a cancelled job (for example a job timeout) is a failure.
+for (const pair of (process.env.NEEDS_RESULTS ?? '').split(',').filter(Boolean)) {
+  const [job, result] = pair.split(':');
+  if (result === 'cancelled') problems.push(`job group "${job}" was cancelled`);
+}
 console.log(v.lines.join('\n'));
-if (!v.ok) {
-  console.error(`FAILED: ${v.problems.join('; ')}`);
+if (problems.length > 0) {
+  console.error(`FAILED: ${problems.join('; ')}`);
   process.exit(1);
 }

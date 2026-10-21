@@ -53,8 +53,16 @@ async function main(): Promise<number> {
   const tenants = selectTenants(process.env.TENANTS); // throws on unknown / empty: refuses to run
   const expected = tenants.map((t) => t.id);
   const runId = process.env.RUN_ID ?? new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-  const parallel = Math.max(1, Number(value('parallel', '1')));
+  const parallelText = value('parallel', '1');
+  if (!/^[1-9]\d*$/.test(parallelText)) {
+    // NaN here used to start zero workers, run nothing, and then read the PREVIOUS run's summary.
+    console.error(`--parallel must be a positive integer, got "${parallelText}"`);
+    return 2;
+  }
+  const parallel = Number(parallelText);
   const failFast = flag('fail-fast');
+  // A summary left by an earlier run must never be read as this run's result.
+  for (const id of expected) fs.rmSync(path.join(REPORT_DIR, id, 'summary.json'), { force: true });
 
   const queue = [...expected];
   const crashed: string[] = [];
@@ -80,12 +88,12 @@ async function main(): Promise<number> {
       // missing or unreadable: the tenant stays absent and verdict() reports "ran nothing"
     }
   }
-  const merged = mergeSummaries(runId, expected, parts);
+  const merged = mergeSummaries(runId, expected, parts, true); // drops parts from another run id
   fs.mkdirSync(REPORT_DIR, { recursive: true });
   fs.writeFileSync(path.join(REPORT_DIR, 'summary.json'), JSON.stringify(merged, null, 2));
   fs.writeFileSync(path.join(REPORT_DIR, 'summary.md'), renderMatrix(columnsFromSummary(merged)) + '\n');
 
-  const v = verdict(merged);
+  const v = verdict(merged, runId);
   console.log(`\n=== Per-tenant result (run ${runId}) ===\n${v.lines.join('\n')}`);
   const notRun = failFast && stop ? queue : [];
   if (notRun.length) console.log(`Not started because of --fail-fast: ${notRun.join(', ')}`);

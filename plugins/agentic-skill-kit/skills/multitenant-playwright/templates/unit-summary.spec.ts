@@ -7,8 +7,9 @@ const log = (tenantId: string, runId: string, lines: Array<Record<string, unknow
   lines.map((l) => JSON.stringify({ tenantId, runId, at: '2026-01-02T00:00:00.000Z', ...l })).join('\n');
 
 test.describe('verdict (exit policy)', () => {
-  const summary = (parts: Record<string, CaseResult[]>, expected: string[]): Summary => ({
+  const summary = (parts: Record<string, CaseResult[]>, expected: string[], runStatus = 'passed'): Summary => ({
     runId: 'r1',
+    runStatus,
     startedAt: '2026-01-02T00:00:00Z',
     finishedAt: '2026-01-02T00:10:00Z',
     expected,
@@ -28,6 +29,38 @@ test.describe('verdict (exit policy)', () => {
   test('a tenant that ran nothing, or only skipped, is never green', () => {
     expect(verdict(summary({ 'tenant-a': [c('x', 'passed')] }, ['tenant-a', 'tenant-b'])).ok).toBe(false);
     expect(verdict(summary({ 'tenant-a': [c('x', 'skipped')] }, ['tenant-a'])).ok).toBe(false);
+  });
+
+  test('REGRESSION: a timed-out or interrupted run is never green, even when every finished test passed', () => {
+    const cases = { 'tenant-a': [c('x', 'passed')] };
+    expect(verdict(summary(cases, ['tenant-a'], 'passed')).ok).toBe(true);
+    expect(verdict(summary(cases, ['tenant-a'], 'timedout')).ok).toBe(false);
+    expect(verdict(summary(cases, ['tenant-a'], 'interrupted')).ok).toBe(false);
+    expect(verdict(summary(cases, ['tenant-a'], 'timedout')).problems.join()).toMatch(/timed out/);
+  });
+
+  test('a stale summary from another run id is rejected', () => {
+    const s = summary({ 'tenant-a': [c('x', 'passed')] }, ['tenant-a']);
+    expect(verdict(s, 'r1').ok).toBe(true);
+    expect(verdict(s, 'r2').ok).toBe(false);
+  });
+
+  test('a planned module that reported nothing makes the tenant incomplete, not passed', () => {
+    const t = buildTenantSummary('tenant-a', [c('x', 'passed')], undefined, [], ['isolation']);
+    expect(t.status).toBe('incomplete');
+    const s: Summary = { ...summary({}, ['tenant-a']), tenants: { 'tenant-a': t } };
+    expect(verdict(s).ok).toBe(false);
+  });
+
+  test('merging: stale parts dropped, same-tenant parts combined, a bad run status wins', () => {
+    const a = summary({ 'tenant-a': [c('x', 'passed')] }, ['tenant-a']);
+    const iso = { ...a, tenants: { 'tenant-a': buildTenantSummary('tenant-a', [{ title: 'i', module: 'isolation', outcome: 'failed' }]) } };
+    const merged = mergeSummaries('r1', ['tenant-a'], [a, iso]);
+    expect(merged.tenants['tenant-a']?.cases).toHaveLength(2);
+    expect(verdict(merged).ok).toBe(false);
+    const stale = { ...a, runId: 'old' };
+    expect(verdict(mergeSummaries('r1', ['tenant-a'], [stale], true), 'r1').ok).toBe(false);
+    expect(mergeSummaries('r1', ['tenant-a'], [a, { ...a, runStatus: 'timedout' }]).runStatus).toBe('timedout');
   });
 
   test('a preflight marker labels the tenant instead of a plain failure', () => {

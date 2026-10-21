@@ -52,6 +52,17 @@ test.describe('pipeline contract', () => {
     for (const t of rawTenants()) expect(yaml, `pipeline names tenant "${t.id}"`).not.toContain(t.id);
   });
 
+  test('every cron in the pipeline is mapped to a name, and every mapped name selects a tenant', () => {
+    const yaml = fs.readFileSync(file, 'utf8');
+    const map = JSON.parse(fs.readFileSync(process.env.SCHEDULE_MAP ?? 'ci/schedules.json', 'utf8')) as Record<string, string>;
+    const crons = [...yaml.matchAll(/cron:\s*'([^']+)'/g)].map((m) => m[1] as string);
+    expect(crons.length, 'pipeline has at least one schedule').toBeGreaterThan(0);
+    for (const cron of crons) expect(map[cron], `cron "${cron}" missing from the schedule map`).toBeTruthy();
+    for (const [cron, name] of Object.entries(map)) {
+      expect(() => decide({ reason: 'schedule', scheduleName: name, tenants: registryTenants() }), `schedule "${cron}"`).not.toThrow();
+    }
+  });
+
   test('no literal secret assignment in the pipeline', () => {
     const yaml = fs.readFileSync(file, 'utf8');
     const literal = /^\s*[A-Za-z0-9_]*(PASSWORD|SECRET|TOKEN|KEY)[A-Za-z0-9_]*\s*:\s*(?!\$\{\{|\$\(|['"]?\$)\S+/im;

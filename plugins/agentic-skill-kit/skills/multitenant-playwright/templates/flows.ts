@@ -17,7 +17,7 @@ export interface TenantContext {
   /** Per-test state (fresh object per test, never module-level). Read it with requireRun(). */
   run: RunState;
   flows: Flows;
-  /** Unique, tenant-prefixed value; duplicates inside a worker throw. */
+  /** Unique, tenant-prefixed value; unique across all tests of a worker and across workers; a duplicate throws. */
   unique(kind: string): string;
 }
 

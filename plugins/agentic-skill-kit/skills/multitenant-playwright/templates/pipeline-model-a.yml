@@ -5,8 +5,10 @@
 #  - no PR trigger: live environments are only touched by schedule or manual runs;
 #  - no tenant id appears in this file (contract test: unit-decide.spec.ts);
 #  - secrets only via the secret store; the credentials file is written at job start and removed in an always() step;
-#  - the test step is continue-on-error so reports and artifacts still publish;
-#  - the job result is derived from summary.json in a final always() step.
+#  - the test step is continue-on-error so the scrub and the result gate still run;
+#  - artifacts are published ONLY when the scrub step succeeded (it fails closed);
+#  - the final gate fails the job when the summary is bad, the run timed out or was interrupted, or any
+#    step outcome listed in STEP_OUTCOMES is not success.
 name: e2e-all-tenants
 on:
   schedule:
@@ -45,6 +47,10 @@ jobs:
         run: |
           umask 077
           printf '%s' "$E2E_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
+          # Shape check: a non-empty JSON object whose values are all strings (jq rejects a byte-order mark).
+          jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
+          # Mask every value in the logs. GitHub does not mask fields inside a JSON blob on its own (verify).
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do [ -n "$v" ] && echo "::add-mask::$v"; done
           echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
 
       - name: Run every selected tenant (continue-all)
@@ -53,10 +59,12 @@ jobs:
         run: npx playwright test
 
       - name: Scrub secret values from artifacts (fails closed)
+        id: scrub
         if: always()
+        continue-on-error: true
         run: npx tsx scrub-artifacts.ts reports
-      - name: Publish reports
-        if: always()
+      - name: Publish reports (only when the scrub succeeded)
+        if: ${{ always() && steps.scrub.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: e2e-reports
@@ -65,6 +73,8 @@ jobs:
       - name: Remove credentials file
         if: always()
         run: rm -f "$RUNNER_TEMP/credentials.json"
-      - name: Job result comes from the per-tenant summary
+      - name: Job result comes from the per-tenant summary and the step outcomes
         if: always()
+        env:
+          STEP_OUTCOMES: tests:${{ steps.tests.outcome }},scrub:${{ steps.scrub.outcome }}
         run: npx tsx check-summary.ts reports/summary.json

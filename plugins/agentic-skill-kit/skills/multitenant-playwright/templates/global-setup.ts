@@ -15,8 +15,15 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   process.env.RUN_ID ??= new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 
   fs.mkdirSync(REPORT_DIR, { recursive: true });
+  // Clear everything a previous run could leave behind: markers, the summary, and any case log of THIS run id.
   for (const f of fs.readdirSync(REPORT_DIR)) {
-    if (f.startsWith('environment-down-')) fs.rmSync(path.join(REPORT_DIR, f));
+    if (f.startsWith('environment-down-') || f === 'summary.json' || f === 'summary.md') fs.rmSync(path.join(REPORT_DIR, f));
+  }
+  const casesDir = path.join(REPORT_DIR, 'cases');
+  if (fs.existsSync(casesDir)) {
+    for (const f of fs.readdirSync(casesDir)) {
+      if (f.endsWith(`-${process.env.RUN_ID}.cases.jsonl`)) fs.rmSync(path.join(casesDir, f));
+    }
   }
   console.log(`[run ${process.env.RUN_ID}] tenants: ${tenants.map((t) => t.id).join(', ')}`);
 }

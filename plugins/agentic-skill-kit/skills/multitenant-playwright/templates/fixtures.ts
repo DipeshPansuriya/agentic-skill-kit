@@ -18,6 +18,11 @@ interface TenantFixtures {
 
 const RUN_ID = process.env.RUN_ID ?? Date.now().toString(36);
 
+// Worker-level state (module scope = once per worker process): uniqueness must hold across the tests that
+// one worker runs, not only inside one test. The worker index keeps parallel workers apart.
+const usedValues = new Set<string>();
+let sequence = 0;
+
 export const test = base.extend<TenantOptions & TenantFixtures>({
   tenantId: ['', { option: true }],
 
@@ -28,12 +33,10 @@ export const test = base.extend<TenantOptions & TenantFixtures>({
 
   // Fresh per test: a new object, never module-level, so tests cannot leak state into each other.
   ctx: async ({ page, tenant }, use, testInfo) => {
-    const used = new Set<string>();
-    let seq = 0;
     const unique = (kind: string): string => {
-      const value = `${tenant.data.recordPrefix}-${kind}-${RUN_ID}-${testInfo.parallelIndex}-${testInfo.repeatEachIndex}-${seq++}`;
-      if (used.has(value)) throw new Error(`Generated a duplicate value "${value}"`); // enforced, not hoped for
-      used.add(value);
+      const value = `${tenant.data.recordPrefix}-${kind}-${RUN_ID}-w${testInfo.workerIndex}-${sequence++}`;
+      if (usedValues.has(value)) throw new Error(`Generated a duplicate value "${value}"`); // enforced, not hoped for
+      usedValues.add(value);
       return value;
     };
     await use({

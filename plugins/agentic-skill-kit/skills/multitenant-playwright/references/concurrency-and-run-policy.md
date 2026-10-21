@@ -23,7 +23,7 @@ Record the real reason in a short ADR and correct it when wrong: one suite's fir
 - Claims files ("this number is taken") appended to a temp file have the same host-local limit.
 
 ## Unique data with enforced uniqueness
-- Generate from the tenant prefix + run id + parallel index + sequence (`ctx.unique(kind)` in `templates/fixtures.ts`); the generator keeps a set and throws on a duplicate.
+- Generate from the tenant prefix + run id + worker index + a worker-level sequence (`ctx.unique(kind)` in `templates/fixtures.ts`). The set and counter live at module scope, so values stay unique across all tests that one worker runs, and the worker index separates workers; a duplicate throws.
 - Tenant prefixes are unique by registry validation, not by a comment. A reviewed suite said prefixes were distinct "on purpose" while four tenants used the same one; with random digits the collision odds were low but not zero.
 - Real data is created on the target every run; cleanup in `finally` where the product allows, and staging or UAT only.
 
@@ -37,7 +37,9 @@ Record the real reason in a short ADR and correct it when wrong: one suite's fir
    - empty or unknown tenant selection refuses to run (global setup, `selectTenants`);
    - no usable credential for a tenant (missing or placeholder) fails that tenant's setup project and writes a marker;
    - environment down: probe the base URL with retries on transient errors only, write the marker; a login page that loads while the API tier is down once cost three nights of 15/15 failures at "Authentication failed", so probe what login actually needs;
-   - one tenant's preflight failure stops only its own module projects.
+   - one tenant's preflight failure stops only its own module projects, and that tenant is reported failed: a tenant that has a planned module with no reported case is `incomplete`, never green;
+   - a run that ends as `timedout` or `interrupted` is never green: the reporter records Playwright's run status in the summary and `verdict()` fails on anything but passed/failed; CI also checks the test step outcome (`STEP_OUTCOMES`);
+   - `run-all.ts` rejects a non-integer `--parallel` (exit 2), deletes each tenant's old summary before spawning, and ignores summaries from another run id.
 7. A run that executed zero tests or only skips is `no-results`, not a pass.
 8. Do not pass `--reporter` on the CLI: it replaces the configured reporters and removes the summary (`run-all.ts` refuses it).
 

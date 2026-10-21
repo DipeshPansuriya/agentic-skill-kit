@@ -10,6 +10,8 @@ import type { Cell, MatrixColumn } from './summary';
  *  - a run recorded for another tenant is never applied (mismatched);
  *  - a partial run cannot replace the latest pointer;
  *  - the merged view is for STATUS, never a release gate.
+ * OPTIONAL helper: combine-cli.ts merges ONE run's summaries and does not use this file. Use these functions
+ * when you keep a longitudinal "latest per tenant" store (artifact storage or a results branch).
  */
 
 export type Taxonomy = 'ok' | 'env-down' | 'job-failed' | 'no-results' | 'mismatched' | 'incomplete';
@@ -67,6 +69,7 @@ export interface Latest {
 }
 
 export function mergeLatest(prev: Latest | undefined, run: RunRecord): Latest {
+  if (prev) assertRecordMatchesTenant(prev.tenantId, run.tenantId, `Latest pointer for run ${run.runId}`);
   const cases = { ...(prev?.cases ?? {}) };
   for (const [key, outcome] of Object.entries(run.cases)) {
     const old = cases[key];

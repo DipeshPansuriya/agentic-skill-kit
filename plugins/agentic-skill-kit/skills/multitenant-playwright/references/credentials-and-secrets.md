@@ -14,12 +14,14 @@
 6. **No auth bypass**: the suite logs in like a user. Do not add test-only backdoors to production code to avoid login.
 
 ## Artifact scrubbing (fail closed)
-Artifacts (HTML report, traces, JSON, logs, screenshots with typed text) can contain credential values; a live password was once published this way.
+Artifacts (HTML report, traces, JSON, logs, screenshots with typed text) can contain credential values, for example a password typed into a form or sent in a request header.
 - `templates/scrub-artifacts.ts` replaces every credential value in text artifacts in these forms: plain, JSON-escaped, HTML-escaped, URL-encoded.
-- Anything that may contain a value and cannot be rewritten is **deleted** (archives and binaries), and the step exits non-zero so a person notices. To keep trace archives, unpack, rewrite and repack with a zip library (verify before relying on it).
+- Replacement runs longest value first (so `admin` never cuts `admin123!` in half) and also covers base64 forms, including base64 of `user:password` (a Basic auth header). Base64 is matched in its aligned form only (**verify**: an embedded value at another offset is not found).
+- A secret shorter than 4 characters cannot be scrubbed without destroying the artifact: the scrub **fails** (use longer test credentials).
+- Anything that may contain a value and cannot be rewritten is **deleted**: every `.zip` (traces and report data are compressed) and any binary that contains a value. The step then exits non-zero so a person notices. Decision: CI runs with `trace: 'off'` because traces would be deleted anyway; keep traces locally. To keep them in CI, add a zip rewriter first (not shipped). Images cannot be scanned for typed text, so do not type real secrets into visible fields in traced or screenshot tests.
 - If no credential value can be resolved, the scrubber refuses (exit 1): it cannot prove the artifacts are clean.
-- Run the scrub before the upload step, in an `always()` step, while the credentials file still exists; then remove the file.
-- Prefer `trace: 'retain-on-failure'`, and avoid typing real secrets into fields in traced tests where the product offers a token login.
+- Run the scrub as its own step (`id: scrub`, `continue-on-error`, `if: always()`) while the credentials file still exists, and **publish artifacts only when it succeeded**: `if: always() && steps.scrub.outcome == 'success'`. A failed scrub therefore publishes nothing, and the final gate (`check-summary.ts` with `STEP_OUTCOMES`) fails the job. Then remove the credentials file.
+- In the write step, also validate the file shape with `jq` (a non-empty object of string values; a byte-order mark makes `jq` fail) and emit `::add-mask::` for every value. GitHub does not mask individual fields of a JSON blob on its own (**verify** in your runner with a test echo); multi-line values need a different approach.
 
 ## Detecting leaks in the PR pipeline
 A contract test fails the PR when the pipeline file assigns a literal to a variable whose name contains PASSWORD, SECRET, TOKEN or KEY (`templates/unit-decide.spec.ts`). Run the repository's secret scanner as well; both are heuristics.

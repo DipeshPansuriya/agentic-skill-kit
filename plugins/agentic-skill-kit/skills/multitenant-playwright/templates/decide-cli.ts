@@ -5,6 +5,7 @@ import { rawTenants } from './registry';
 /**
  * Thin CLI over decide(). Tenants come from the registry, never from the pipeline file.
  *   npx tsx decide-cli.ts --reason schedule --schedule "nightly-a" --format github
+ *   npx tsx decide-cli.ts --reason schedule --cron "0 20 * * 0-4" --schedule-map ci/schedules.json
  *   npx tsx decide-cli.ts --reason manual --manual tenant-a,tenant-b            (a bare id means true)
  *   npx tsx decide-cli.ts --reason manual --manual tenant-a=true,tenant-b=false --format azure
  *   npx tsx decide-cli.ts --reason manual --all
@@ -25,9 +26,20 @@ try {
     manual[id] = value === 'true';
   }
   if (process.argv.includes('--all')) for (const t of rawTenants()) manual[t.id] = true;
+  let scheduleName = arg('schedule') ?? '';
+  const cron = arg('cron');
+  if (cron !== undefined) {
+    // GitHub-style schedules give the cron string, not a name: map it with a small data file.
+    const mapFile = arg('schedule-map');
+    if (!mapFile) throw new Error('--cron needs --schedule-map <file.json>');
+    const map = JSON.parse(fs.readFileSync(mapFile, 'utf8')) as Record<string, string>;
+    const name = map[cron];
+    if (!name) throw new Error(`cron "${cron}" is not in ${mapFile}: add it, or scheduled runs would select nothing`);
+    scheduleName = name;
+  }
   const input: DecideInput = {
     reason,
-    scheduleName: arg('schedule') ?? '',
+    scheduleName,
     manual,
     tenants: rawTenants().map((t) => ({
       id: t.id,
