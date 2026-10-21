@@ -80,4 +80,4 @@ Ask **one** question only if the framework or major version is unknown *and* the
 5. **Key decisions & trade-offs** (≤ 6 bullets).
 6. **Needs input / next steps**: API gaps, design questions, packages to install.
 
-After editing this skill, rerun `evals/test-cases.md` (see benchmark-skill).
+After editing this skill, rerun `evals/test-cases.md`.
