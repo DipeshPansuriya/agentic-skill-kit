@@ -27,7 +27,10 @@ for (const pair of (process.env.STEP_OUTCOMES ?? '').split(',').filter(Boolean))
   const [step, outcome] = pair.split(':');
   // The test step normally "fails" when tests fail; that already shows in the summary. Anything other than
   // success on the scrub step, or a cancelled/skipped test step, must fail the job.
-  if (outcome !== 'success' && (step !== 'tests' || outcome !== 'failure')) problems.push(`step "${step}" ended as "${outcome}"`);
+  // "failure" of the test step is expected when tests failed, but only if the summary itself shows it
+  // (runStatus failed and a failed tenant; verdict() already rejects a failed run with no failed tenant).
+  const testsFailedWithEvidence = step === 'tests' && outcome === 'failure' && summary?.runStatus === 'failed';
+  if (outcome !== 'success' && !testsFailedWithEvidence) problems.push(`step "${step}" ended as "${outcome}"`);
   if (step === 'scrub' && outcome !== 'success') problems.push('artifacts were not scrubbed: they must not be published');
 }
 for (const line of v.lines) console.log(line);

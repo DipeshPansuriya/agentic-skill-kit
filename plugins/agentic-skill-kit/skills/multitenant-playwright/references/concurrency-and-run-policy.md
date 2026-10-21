@@ -29,6 +29,7 @@ Record the real reason in a short ADR and correct it when wrong: one suite's fir
 
 ## RUN POLICY
 1. **ONE command / run completes ALL selected tenants.** Model A: `npx playwright test`. Model B locally: `npx tsx run-all.ts` (`templates/run-all.ts`); in CI the matrix is the same idea.
+   `run-all.ts` runs each tenant in its own child with `EXCLUDE_MODULES=isolation`, then ONE extra isolation pass over all selected tenants (a visible "SKIPPED" line when fewer than two). Run commands: all tenants `npx tsx run-all.ts`; one tenant `TENANTS=tenant-a EXCLUDE_MODULES=isolation npx playwright test`; isolation only `TENANTS=tenant-a,tenant-b MODULES=isolation npx playwright test`; unit `UNIT=1 npx playwright test --project=unit`.
 2. **Continue-all.** A failing tenant never stops the others. Do not set `maxFailures` or `-x` in config. In B, `fail-fast: false`; in `run-all` the loop continues.
 3. **Optional `--fail-fast`**, cheap: Model A pass `--max-failures=1` (stops the whole process); `run-all.ts --fail-fast` stops launching further tenants and the exit is still non-zero.
 4. **Per-tenant pass/fail summary at the end** (reporter `onEnd` and `run-all`): one line per tenant with status and counts.

@@ -114,6 +114,12 @@ export function verdict(summary: Summary | undefined, expectedRunId?: string): V
     );
     if (t.status !== 'passed') problems.push(`${id}: ${t.status}`);
   }
+  // Playwright itself failed, yet no tenant shows a failure: the error came from outside any test
+  // (a throwing global teardown, a setup hook, a reporter or config error). That is never green.
+  if (summary.runStatus === 'failed') {
+    const tenantFailure = Object.values(summary.tenants).some((t) => t.status !== 'passed');
+    if (!tenantFailure) problems.push('run failed outside any test (for example a global teardown or setup error)');
+  }
   return { ok: problems.length === 0, lines, problems };
 }
 

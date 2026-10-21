@@ -8,8 +8,9 @@ import { projectName, SETUP_MODULE } from './project-name';
  * Module switches (environment):
  *   MODULES=isolation          only these modules (setup projects always exist)
  *   EXCLUDE_MODULES=isolation  everything except these
- * Isolation specs need at least TWO tenants' sessions in one process, so a one-tenant run must exclude them;
- * the planner refuses a one-tenant plan that still contains isolation (fail loud, never a vacuous pass).
+ * Isolation specs need at least TWO tenants' sessions in one process. With one tenant selected the planner drops
+ * the isolation module with a visible warning (so a one-tenant registry or job still loads); MODULES=isolation
+ * with one tenant throws. Per-tenant jobs should still set EXCLUDE_MODULES=isolation explicitly.
  */
 export interface PlannedProject {
   name: string;
@@ -27,7 +28,11 @@ export interface PlanOptions {
 
 export const parseList = (v: string | undefined): string[] => (v ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
-export function planProjects(tenants: readonly TenantProfile[], opts: PlanOptions = {}): PlannedProject[] {
+export function planProjects(
+  tenants: readonly TenantProfile[],
+  opts: PlanOptions = {},
+  warn: (message: string) => void = (m) => console.warn(m),
+): PlannedProject[] {
   const only = opts.only ?? [];
   const exclude = opts.exclude ?? [];
   for (const m of [...only, ...exclude]) {
@@ -57,11 +62,28 @@ export function planProjects(tenants: readonly TenantProfile[], opts: PlanOption
     })),
   ]);
 
-  if (tenants.length < 2 && plan.some((p) => p.module === 'isolation')) {
-    throw new Error(
-      'Isolation specs need at least two tenants in the same run. Select more tenants (TENANTS), ' +
-        'or exclude the module for per-tenant jobs (EXCLUDE_MODULES=isolation) and run it in the dedicated isolation job.',
+  const hasIsolation = plan.some((p) => p.module === 'isolation');
+  if (tenants.length < 2 && hasIsolation) {
+    // An explicit request for ONLY isolation with one tenant can never prove anything: fail loud.
+    if (only.includes('isolation')) {
+      throw new Error('MODULES=isolation needs at least two tenants in the same run: select more tenants (TENANTS).');
+    }
+    // Otherwise isolation is merely part of "all modules": drop it for this one-tenant selection, visibly.
+    warn(
+      'isolation module not planned: a one-tenant selection cannot test isolation. ' +
+        'Run it in a pass or job that selects two or more tenants (TENANTS=a,b MODULES=isolation).',
     );
+    return plan.filter((p) => p.module !== 'isolation');
   }
   return plan;
+}
+
+/**
+ * The extra isolation pass of a one-command Model B run (run-all.ts): per-tenant children exclude isolation,
+ * then ONE pass selects every tenant. With fewer than two tenants the pass is skipped, with a visible line.
+ */
+export function isolationPass(tenantIds: readonly string[]): { run: boolean; line: string } {
+  return tenantIds.length >= 2
+    ? { run: true, line: `isolation pass: ${tenantIds.length} tenants in one process` }
+    : { run: false, line: 'isolation pass SKIPPED: it needs at least two tenants (this run selected fewer)' };
 }

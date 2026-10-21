@@ -74,14 +74,16 @@ class SummaryReporter implements Reporter {
       if (!parsed) return;
       const outcome = toCell(test.outcome());
       const error = result.error?.message?.replace(ANSI, '').split('\n')[0];
-      const item: CaseResult = { title: test.title, module: parsed.module, outcome, ...(error ? { error } : {}) };
+      // Full title path (describe blocks included) so same-named tests in different describes stay distinct.
+      const title = test.titlePath().slice(3).join(' > ') || test.title;
+      const item: CaseResult = { title, module: parsed.module, outcome, ...(error ? { error } : {}) };
       // A passing setup is not a test result: it must never make a tenant look "ran something".
       if (!(parsed.module === SETUP_MODULE && outcome === 'passed')) this.cases.get(parsed.tenantId)?.push(item);
       appendCaseLine({
         kind: 'test',
         tenantId: parsed.tenantId,
         runId: this.runId,
-        title: test.title,
+        title,
         module: parsed.module,
         outcome,
         at: new Date().toISOString(),

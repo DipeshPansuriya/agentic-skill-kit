@@ -47,6 +47,11 @@ const problems = [...v.problems];
 for (const pair of (process.env.NEEDS_RESULTS ?? '').split(',').filter(Boolean)) {
   const [job, result] = pair.split(':');
   if (result === 'cancelled') problems.push(`job group "${job}" was cancelled`);
+  // A job that died before it could write a summary (isolation included) must not pass silently.
+  if (job === 'isolation' && result === 'failure') problems.push('isolation job failed');
+  if (job === 'isolation' && result === 'skipped' && expected.length >= 2) {
+    problems.push('isolation job was skipped although two or more tenants were chosen');
+  }
 }
 console.log(v.lines.join('\n'));
 if (problems.length > 0) {

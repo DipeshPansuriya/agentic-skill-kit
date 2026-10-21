@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { REPORT_DIR } from './cache';
+import { isolationPass } from './project-plan';
 import { selectTenants } from './registry';
 import { columnsFromSummary, mergeSummaries, renderMatrix, verdict, type Summary } from './summary';
 
@@ -32,20 +33,27 @@ if (passthrough.some((a) => a.startsWith('--reporter'))) {
   process.exit(2);
 }
 
-function runOne(tenantId: string, runId: string): Promise<{ tenantId: string; code: number }> {
+/** One Playwright child. `label` names its report folder; `selection` is the TENANTS value; `modules` the module switches. */
+function runOne(
+  label: string,
+  selection: string,
+  modules: { MODULES: string; EXCLUDE_MODULES: string },
+  runId: string,
+): Promise<{ tenantId: string; code: number }> {
   return new Promise((resolve) => {
     const child = spawn('npx', ['playwright', 'test', ...passthrough], {
       stdio: 'inherit',
       shell: process.platform === 'win32', // npx is npx.cmd on Windows
       env: {
         ...process.env,
-        TENANTS: tenantId,
+        ...modules,
+        TENANTS: selection,
         RUN_ID: runId,
-        REPORT_DIR: path.join(REPORT_DIR, tenantId), // per-process output: parallel children never share a file
+        REPORT_DIR: path.join(REPORT_DIR, label), // per-process output: parallel children never share a file
       },
     });
-    child.on('error', () => resolve({ tenantId, code: 1 }));
-    child.on('close', (code) => resolve({ tenantId, code: code ?? 1 }));
+    child.on('error', () => resolve({ tenantId: label, code: 1 }));
+    child.on('close', (code) => resolve({ tenantId: label, code: code ?? 1 }));
   });
 }
 
@@ -70,7 +78,8 @@ async function main(): Promise<number> {
 
   const worker = async (): Promise<void> => {
     for (let id = queue.shift(); id !== undefined && !stop; id = queue.shift()) {
-      const r = await runOne(id, runId);
+      // Per-tenant children never run isolation: it needs two tenants' sessions in one process.
+      const r = await runOne(id, id, { MODULES: '', EXCLUDE_MODULES: 'isolation' }, runId);
       if (r.code !== 0) {
         crashed.push(id); // non-zero child exit: counted even if its summary looks fine
         if (failFast) stop = true;
@@ -79,8 +88,19 @@ async function main(): Promise<number> {
   };
   await Promise.all(Array.from({ length: Math.min(parallel, expected.length) }, worker));
 
+  // ONE extra pass runs isolation with every selected tenant in a single process (skipped visibly below 2 tenants).
+  const iso = isolationPass(expected);
+  console.log(iso.line);
+  const labels = [...expected];
+  if (iso.run && !stop) {
+    fs.rmSync(path.join(REPORT_DIR, 'isolation', 'summary.json'), { force: true });
+    const r = await runOne('isolation', expected.join(','), { MODULES: 'isolation', EXCLUDE_MODULES: '' }, runId);
+    if (r.code !== 0) crashed.push('isolation');
+    labels.push('isolation');
+  }
+
   const parts: Summary[] = [];
-  for (const id of expected) {
+  for (const id of labels) {
     const file = path.join(REPORT_DIR, id, 'summary.json');
     try {
       parts.push(JSON.parse(fs.readFileSync(file, 'utf8')) as Summary);

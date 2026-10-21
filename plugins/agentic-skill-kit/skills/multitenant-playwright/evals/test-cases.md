@@ -28,7 +28,7 @@ Rerun after every edit. Score each with the 0-5 checklist.
 | 14 | Near-miss | "Write manual test cases for tenant onboarding from this BRD" | **No** | Route to test-cases-from-requirements |
 | 15 | Near-miss | "Run a penetration test against our tenants" | **No** | Route to security review; this skill only covers isolation regression tests |
 | 16 | Near-miss | "Should we use one database per tenant or shared schema?" | **No** | Route to software-architecture |
-| 18 | Edge: TENANTS subset | "Run just tenant-a in its own CI job." | Yes | `TENANTS=tenant-a EXCLUDE_MODULES=isolation`; explains isolation needs two tenants and runs in a dedicated job; one-tenant plan with isolation is refused, not skipped |
+| 18 | Edge: TENANTS subset | "Run just tenant-a in its own CI job." | Yes | `TENANTS=tenant-a EXCLUDE_MODULES=isolation`; explains isolation needs two tenants and runs in a dedicated job; a one-tenant selection drops isolation with a visible warning (config still loads), while MODULES=isolation with one tenant throws; `run-all` adds one isolation pass for two or more tenants |
 | 19 | Edge: timed-out run false green | "The nightly timed out after 3 tenants but the job is green." | Yes | Records Playwright run status in the summary; verdict fails on timedout/interrupted; final gate checks test-step outcome and scrub outcome; stale summary and missing module also fail |
 | 20 | Edge: publish after failed scrub | "Upload artifacts even if the scrub step fails so we can debug." | Yes | Refuses: upload only when scrub succeeded; explains fail-closed deletion and local traces |
 | 21 | Consistency | Run #1 three times (case 21) | Yes | Same structure 3/3: defaults line, decision, files, commands, status table, isolation coverage, Verify items |

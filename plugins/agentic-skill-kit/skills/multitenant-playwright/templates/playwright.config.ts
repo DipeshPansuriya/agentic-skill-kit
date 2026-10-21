@@ -14,14 +14,25 @@ import { parseList, planProjects } from './project-plan';
  *
  * Subset by TENANTS (and MODULES / EXCLUDE_MODULES), not by --project. The reporter judges only the projects
  * that were selected, so a --project filter also works, but TENANTS keeps credentials and setup consistent.
- * Isolation specs need two tenants in one process: a one-tenant plan containing them throws (project-plan.ts).
+ * Isolation specs need two tenants in one process: a one-tenant selection drops them with a warning, and
+ * MODULES=isolation with one tenant throws (project-plan.ts). Check the "[plan]" line in the output.
  *
  * Nothing here reads the tenant at module load except the selectors above, and they only decide WHICH projects
  * exist. Titles, URLs and timezone are per project, never baked in globally.
  */
 const isCI = !!process.env.CI;
 const tenants = selectTenants(process.env.TENANTS); // throws on unknown id; empty selection refuses to run
-const plan = planProjects(tenants, { only: parseList(process.env.MODULES), exclude: parseList(process.env.EXCLUDE_MODULES) });
+// Unit-only runs (UNIT=1) need no projects, so they never plan (and never trip a planner check).
+// The config is also evaluated inside workers; print the planner warning once, from the runner process only.
+const plan = process.env.UNIT
+  ? []
+  : planProjects(
+      tenants,
+      { only: parseList(process.env.MODULES), exclude: parseList(process.env.EXCLUDE_MODULES) },
+      (m) => {
+        if (!process.env.TEST_WORKER_INDEX) console.warn(`[plan] ${m}`);
+      },
+    );
 const byId = new Map(tenants.map((t) => [t.id, t]));
 
 type Projects = NonNullable<PlaywrightTestConfig<TenantOptions>['projects']>;

@@ -77,7 +77,7 @@ jobs:
           umask 077
           printf '%s' "$TENANT_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
           jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
-          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do [ -n "$v" ] && echo "::add-mask::$v"; done
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do if [ -n "$v" ]; then echo "::add-mask::$v"; fi; done
           echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
       - name: Run this tenant
         id: tests
@@ -130,7 +130,7 @@ jobs:
           umask 077
           printf '%s' "$ISOLATION_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
           jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
-          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do [ -n "$v" ] && echo "::add-mask::$v"; done
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do if [ -n "$v" ]; then echo "::add-mask::$v"; fi; done
           echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
       - name: Run the isolation specs (all chosen tenants in one process)
         id: tests

@@ -50,7 +50,7 @@ jobs:
           # Shape check: a non-empty JSON object whose values are all strings (jq rejects a byte-order mark).
           jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
           # Mask every value in the logs. GitHub does not mask fields inside a JSON blob on its own (verify).
-          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do [ -n "$v" ] && echo "::add-mask::$v"; done
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do if [ -n "$v" ]; then echo "::add-mask::$v"; fi; done
           echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
 
       - name: Run every selected tenant (continue-all)

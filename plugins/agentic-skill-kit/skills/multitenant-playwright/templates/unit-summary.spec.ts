@@ -39,6 +39,15 @@ test.describe('verdict (exit policy)', () => {
     expect(verdict(summary(cases, ['tenant-a'], 'timedout')).problems.join()).toMatch(/timed out/);
   });
 
+  test('REGRESSION: Playwright failed outside any test (e.g. a throwing global teardown) is never green', () => {
+    const allPass = { 'tenant-a': [c('x', 'passed')] };
+    const v = verdict(summary(allPass, ['tenant-a'], 'failed'));
+    expect(v.ok).toBe(false);
+    expect(v.problems.join()).toMatch(/outside any test/);
+    // when a tenant really failed, the failure is explained by that tenant, not by this rule
+    expect(verdict(summary({ 'tenant-a': [c('x', 'failed')] }, ['tenant-a'], 'failed')).problems.join()).not.toMatch(/outside any test/);
+  });
+
   test('a stale summary from another run id is rejected', () => {
     const s = summary({ 'tenant-a': [c('x', 'passed')] }, ['tenant-a']);
     expect(verdict(s, 'r1').ok).toBe(true);
