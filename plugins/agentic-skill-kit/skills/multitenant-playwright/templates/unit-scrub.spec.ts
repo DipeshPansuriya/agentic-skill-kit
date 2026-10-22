@@ -77,13 +77,13 @@ test.describe('scrubber: one level of encoding, file names, symlinks and binarie
     expect(names).toContain('[scrubbed]-report.json');
   });
 
-  test('unknown binary types (.webm, images) are deleted like .zip when they may hold a value', () => {
+  test('unknown binary types (.webm, images) are deleted even when clean: binaries cannot be proven clean', () => {
     const pass = 'longsecret';
     const dir = scratch({ 'video.webm': `xx${pass}xx`, 'shot.png': '= no secret =' });
     const r = scrubDirectory(dir, [pass], []);
-    expect(r.deleted).toHaveLength(1);
+    expect(r.deleted).toHaveLength(2);
     expect(fs.existsSync(path.join(dir, 'video.webm'))).toBe(false);
-    expect(fs.existsSync(path.join(dir, 'shot.png'))).toBe(true);
+    expect(fs.existsSync(path.join(dir, 'shot.png'))).toBe(false);
   });
 
   test('SCRUB_KEEP_BINARY=1 keeps dirty binaries loudly, but they still count as unsafe', () => {
