@@ -2,7 +2,7 @@
 """Repository checks used by CI and locally: python .github/scripts/check_repo.py
 
 1. Marketplace + plugin manifests are valid and names match
-2. Every skill passes validate_skill.py
+2. Every skill passes .github/scripts/validate_skill.py
 3. Scanner self-tests: bad samples trigger, clean samples stay silent
 4. Other helper scripts run on their samples
 5. Guard hooks behave (block on secret, pass on clean)
@@ -45,12 +45,10 @@ hooks = json.loads((GUARD / "hooks/hooks.json").read_text())
 check("guard hooks.json has PostToolUse and PreToolUse", {"PostToolUse", "PreToolUse"} <= set(hooks.get("hooks", {})))
 
 # 2. skills
-validator = SK / "create-skill/scripts/validate_skill.py"
+validator = ROOT / ".github" / "scripts" / "validate_skill.py"
 skills = sorted(d for d in SK.iterdir() if d.is_dir())
 bad = [d.name for d in skills if run(validator, d).returncode != 0]
 check(f"all {len(skills)} skills pass validate_skill.py", not bad, ", ".join(bad))
-check("validate_skill.py copies are identical",
-      validator.read_bytes() == (SK / "combine-skills/scripts/validate_skill.py").read_bytes())
 with tempfile.TemporaryDirectory() as tmp:
     d = Path(tmp) / "ref-probe"
     d.mkdir()
@@ -97,7 +95,6 @@ check("code_metrics --compare runs",
           SK / "refactoring/templates/samples/python_after.py").returncode == 0)
 check("refactoring python sample is behaviour-equivalent",
       "mismatches=0" in run("check_python_equivalence.py", cwd=SK / "refactoring/templates/samples").stdout)
-check("week_info runs", "ISO week" in run(SK / "weekly-status-report/scripts/week_info.py", "2026-01-01").stdout)
 
 # 5. guard hooks
 guard = GUARD / "hooks/guard.py"

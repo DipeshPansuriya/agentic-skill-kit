@@ -1,0 +1,197 @@
+# MODEL B: decide -> one job per tenant (process per tenant, tenant via TENANTS) + one isolation job -> combine.
+# GitHub Actions syntax. Azure DevOps equivalents are in references/ci.md.
+#
+# The matrix is produced by decide-cli.ts from the registry. No tenant id appears in this file.
+# Schedules: GitHub gives the cron STRING, not a display name, so ci/schedules.json maps each cron to a name that
+# contains tenant schedule tokens (templates/schedules.example.json). unit-decide.spec.ts fails when a cron in
+# this file is missing from the map or a mapped name selects no tenant. Azure DevOps exposes the schedule
+# display name directly (Build.CronSchedule.DisplayName), so no map is needed there.
+#
+# Per-tenant jobs EXCLUDE the isolation module (EXCLUDE_MODULES): isolation specs need two tenants' sessions in
+# one process. The dedicated `isolation` job selects every chosen tenant and runs only that module, with a
+# secret that holds the participating tenants' credentials. It is skipped when fewer than two tenants are chosen.
+name: e2e-per-tenant
+on:
+  schedule:
+    - cron: '0 20 * * 0-4'
+  workflow_dispatch:
+    inputs:
+      tenants:
+        description: 'Comma list of tenant ids (manual runs); empty is refused'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.d.outputs.matrix }}
+      tenants: ${{ steps.d.outputs.tenants }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        persist-credentials: false
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - id: d
+        name: Decide (fails when nothing is selected)
+        env:
+          CRON: ${{ github.event.schedule }}
+          MANUAL_TENANTS: ${{ github.event.inputs.tenants }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            npx tsx decide-cli.ts --reason schedule --cron "$CRON" --schedule-map ci/schedules.json --format github
+          else
+            npx tsx decide-cli.ts --reason manual --manual "$MANUAL_TENANTS" --format github
+          fi
+
+  tenant:
+    needs: decide
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false          # a failing tenant never stops the others
+      matrix: ${{ fromJSON(needs.decide.outputs.matrix) }}
+    timeout-minutes: ${{ matrix.timeout }}
+    env:
+      CI: 'true'
+      TENANTS: ${{ matrix.tenant }}
+      EXCLUDE_MODULES: isolation
+      REPORT_DIR: reports/${{ matrix.tenant }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        persist-credentials: false
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Write this tenant's credentials file
+        env:
+          TENANT_CREDENTIALS_JSON: ${{ secrets[matrix.credentialsSecret] }}
+        run: |
+          umask 077
+          printf '%s' "$TENANT_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
+          jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do if [ -n "$v" ]; then echo "::add-mask::$v"; fi; done
+          echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
+      - name: Run this tenant
+        id: tests
+        continue-on-error: true
+        run: npx playwright test
+      - name: Scrub secret values from artifacts (fails closed)
+        id: scrub
+        if: always()
+        continue-on-error: true
+        run: npx tsx scrub-artifacts.ts "reports/${{ matrix.tenant }}"
+      - name: Publish this tenant's results (artifact, never committed to main; only when scrubbed)
+        if: ${{ always() && steps.scrub.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: results-${{ matrix.tenant }}
+          path: reports/${{ matrix.tenant }}
+          retention-days: 30
+      - name: Remove credentials file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/credentials.json"
+      - name: Job result comes from this tenant's summary and the step outcomes
+        if: always()
+        env:
+          STEP_OUTCOMES: tests:${{ steps.tests.outcome }},scrub:${{ steps.scrub.outcome }}
+        run: npx tsx check-summary.ts "reports/${{ matrix.tenant }}/summary.json"
+
+  isolation:
+    needs: decide
+    # Needs a pair: skipped (not failed) when fewer than two tenants were chosen. combine does not expect it then.
+    if: ${{ contains(needs.decide.outputs.tenants, ',') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: 'true'
+      TENANTS: ${{ needs.decide.outputs.tenants }}
+      MODULES: isolation
+      REPORT_DIR: reports/isolation
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        persist-credentials: false
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Write the participating tenants' credentials file
+        env:
+          ISOLATION_CREDENTIALS_JSON: ${{ secrets.E2E_ISOLATION_CREDENTIALS }}
+        run: |
+          umask 077
+          printf '%s' "$ISOLATION_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
+          jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do if [ -n "$v" ]; then echo "::add-mask::$v"; fi; done
+          echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
+      - name: Run the isolation specs (all chosen tenants in one process)
+        id: tests
+        continue-on-error: true
+        run: npx playwright test
+      - name: Scrub secret values from artifacts (fails closed)
+        id: scrub
+        if: always()
+        continue-on-error: true
+        run: npx tsx scrub-artifacts.ts reports/isolation
+      - name: Publish isolation results (only when scrubbed)
+        if: ${{ always() && steps.scrub.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: results-isolation
+          path: reports/isolation
+          retention-days: 30
+      - name: Remove credentials file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/credentials.json"
+      - name: Job result comes from the summary and the step outcomes
+        if: always()
+        env:
+          STEP_OUTCOMES: tests:${{ steps.tests.outcome }},scrub:${{ steps.scrub.outcome }}
+        run: npx tsx check-summary.ts reports/isolation/summary.json
+
+  combine:
+    needs: [decide, tenant, isolation]
+    if: ${{ always() && needs.decide.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXPECTED: ${{ needs.decide.outputs.tenants }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        persist-credentials: false
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        persist-credentials: false
+        with:
+          path: all-results
+          pattern: results-*
+      - name: Merge and derive the pipeline result (a tenant with no results fails)
+        env:
+          NEEDS_RESULTS: tenant:${{ needs.tenant.result }},isolation:${{ needs.isolation.result }}
+        run: npx tsx combine-cli.ts all-results combined
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        persist-credentials: false
+        if: always()
+        with:
+          name: combined
+          path: combined
+          retention-days: 30

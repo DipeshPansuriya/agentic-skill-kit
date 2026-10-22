@@ -1,0 +1,82 @@
+# MODEL A: one pipeline job, ONE Playwright process, one project per tenant x module (generated from the registry).
+# GitHub Actions syntax. Azure DevOps equivalents are in references/ci.md.
+#
+# Rules this sketch encodes:
+#  - no PR trigger: live environments are only touched by schedule or manual runs;
+#  - no tenant id appears in this file (contract test: unit-decide.spec.ts);
+#  - secrets only via the secret store; the credentials file is written at job start and removed in an always() step;
+#  - the test step is continue-on-error so the scrub and the result gate still run;
+#  - artifacts are published ONLY when the scrub step succeeded (it fails closed);
+#  - the final gate fails the job when the summary is bad, the run timed out or was interrupted, or any
+#    step outcome listed in STEP_OUTCOMES is not success.
+name: e2e-all-tenants
+on:
+  schedule:
+    - cron: '0 20 * * 0-4'
+  workflow_dispatch:
+    inputs:
+      tenants:
+        description: 'Comma list of tenant ids; empty = all'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      CI: 'true'
+      TENANTS: ${{ github.event.inputs.tenants }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        persist-credentials: false
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Unit tests of pure logic
+        run: UNIT=1 npx playwright test --project=unit
+
+      - name: Write credentials file (all tenants, one JSON map of variable names to values)
+        env:
+          E2E_CREDENTIALS_JSON: ${{ secrets.E2E_CREDENTIALS }}
+        run: |
+          umask 077
+          printf '%s' "$E2E_CREDENTIALS_JSON" > "$RUNNER_TEMP/credentials.json"
+          # Shape check: a non-empty JSON object whose values are all strings (jq rejects a byte-order mark).
+          jq -e 'type == "object" and length > 0 and all(.[]; type == "string")' "$RUNNER_TEMP/credentials.json" > /dev/null
+          # Mask every value in the logs. GitHub does not mask fields inside a JSON blob on its own (verify).
+          jq -r '.[]' "$RUNNER_TEMP/credentials.json" | while IFS= read -r v; do if [ -n "$v" ]; then echo "::add-mask::$v"; fi; done
+          echo "CREDENTIALS_FILE=$RUNNER_TEMP/credentials.json" >> "$GITHUB_ENV"
+
+      - name: Run every selected tenant (continue-all)
+        id: tests
+        continue-on-error: true
+        run: npx playwright test
+
+      - name: Scrub secret values from artifacts (fails closed)
+        id: scrub
+        if: always()
+        continue-on-error: true
+        run: npx tsx scrub-artifacts.ts reports
+      - name: Publish reports (only when the scrub succeeded)
+        if: ${{ always() && steps.scrub.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-reports
+          path: reports
+          retention-days: 14
+      - name: Remove credentials file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/credentials.json"
+      - name: Job result comes from the per-tenant summary and the step outcomes
+        if: always()
+        env:
+          STEP_OUTCOMES: tests:${{ steps.tests.outcome }},scrub:${{ steps.scrub.outcome }}
+        run: npx tsx check-summary.ts reports/summary.json

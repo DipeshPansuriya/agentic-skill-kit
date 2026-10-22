@@ -1,7 +1,7 @@
 {
   "name": "agentic-skill-kit",
-  "version": "1.1.0",
-  "description": "31 skills: engineering, Spec Kit, isometric explainers, marketing UI, local pentest, and work comms. Installable from this repo only.",
+  "version": "1.2.0",
+  "description": "32 skills: engineering, Spec Kit, isometric explainers, marketing UI, local pentest, and work comms. Installable from this repo only.",
   "author": { "name": "Dipesh Pansuriya", "url": "https://github.com/DipeshPansuriya" },
   "homepage": "https://github.com/DipeshPansuriya/agentic-skill-kit",
   "repository": "https://github.com/DipeshPansuriya/agentic-skill-kit",

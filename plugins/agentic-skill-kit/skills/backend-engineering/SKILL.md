@@ -80,4 +80,4 @@ For full-stack requests (e.g. Angular UI + .NET API), handle the API here and ha
 5. **Key decisions & trade-offs** (≤ 6 bullets).
 6. **Needs input / next steps**: config, migrations, open questions.
 
-After editing this skill, rerun `evals/test-cases.md` (see benchmark-skill).
+After editing this skill, rerun `evals/test-cases.md`.
