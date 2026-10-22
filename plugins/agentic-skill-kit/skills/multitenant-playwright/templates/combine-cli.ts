@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { mergeSummaries, columnsFromSummary, renderMatrix, verdict, type Summary } from './summary';
+import { mergeSummaries, columnsFromSummary, renderMatrix, verdict, parseSummary, SUMMARY_MAX_BYTES, type Summary } from './summary';
 
 /**
  * Model B "combine" job: merge the per-tenant summaries downloaded from the tenant jobs and derive the
@@ -28,9 +28,12 @@ if (!root || !fs.existsSync(root)) {
 const parts: Summary[] = [];
 for (const f of summaries(root)) {
   try {
-    parts.push(JSON.parse(fs.readFileSync(f, 'utf8')) as Summary);
-  } catch {
-    console.error(`unreadable summary ignored: ${f}`);
+    // Untrusted artifact: per-file try/catch, size cap and shape check; a bad file is named and skipped.
+    const parsed = parseSummary({ size: fs.statSync(f).size, text: fs.readFileSync(f, 'utf8') });
+    if (parsed) parts.push(parsed);
+    else console.error(`summary rejected (over ${Math.floor(SUMMARY_MAX_BYTES / (1024 * 1024))} MB or unexpected shape): ${f}`);
+  } catch (e) {
+    console.error(`unreadable summary ignored (${e instanceof Error ? e.message : String(e)}): ${f}`);
   }
 }
 const merged = mergeSummaries(parts[0]?.runId ?? 'unknown', expected, parts);

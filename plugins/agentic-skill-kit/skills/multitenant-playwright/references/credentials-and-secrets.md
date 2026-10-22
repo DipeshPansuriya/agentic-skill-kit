@@ -21,7 +21,19 @@ Artifacts (HTML report, traces, JSON, logs, screenshots with typed text) can con
 - Anything that may contain a value and cannot be rewritten is **deleted**: every `.zip` (traces and report data are compressed) and any binary that contains a value. The step then exits non-zero so a person notices. Decision: CI runs with `trace: 'off'` because traces would be deleted anyway; keep traces locally. To keep them in CI, add a zip rewriter first (not shipped). Images cannot be scanned for typed text, so do not type real secrets into visible fields in traced or screenshot tests.
 - If no credential value can be resolved, the scrubber refuses (exit 1): it cannot prove the artifacts are clean.
 - Run the scrub as its own step (`id: scrub`, `continue-on-error`, `if: always()`) while the credentials file still exists, and **publish artifacts only when it succeeded**: `if: always() && steps.scrub.outcome == 'success'`. A failed scrub therefore publishes nothing, and the final gate (`check-summary.ts` with `STEP_OUTCOMES`) fails the job. Then remove the credentials file.
-- In the write step, also validate the file shape with `jq` (a non-empty object of string values; a byte-order mark makes `jq` fail) and emit `::add-mask::` for every value. GitHub does not mask individual fields of a JSON blob on its own (**verify** in your runner with a test echo); multi-line values need a different approach.
+- In the write step, also validate the file shape with `jq` (a non-empty object of string values; a byte-order mark makes `jq` fail) and emit `::add-mask::` for every value. GitHub does not mask individual fields of a JSON blob on its own (**verify** in your runner with a test echo); multi-line values need explicit redaction: `::add-mask::` covers SINGLE-LINE values only, so a multi-line
+  secret must be split per line (each line masked) or redacted before it reaches any log or artifact.
+  GitHub-native multi-line masking behaviour: **verify** in your runner with a test echo - do not rely on it.
 
 ## Detecting leaks in the PR pipeline
 A contract test fails the PR when the pipeline file assigns a literal to a variable whose name contains PASSWORD, SECRET, TOKEN or KEY (`templates/unit-decide.spec.ts`). Run the repository's secret scanner as well; both are heuristics.
+
+## Scrubber residual limits (templates/scrub-artifacts.ts header)
+
+Covered: plain, JSON-escaped, HTML-escaped, URL-encoded and base64 (aligned) forms, plus ONE level of
+URL-encoding or any-alignment base64 found by both the text and the binary scan; file names holding a secret
+value are renamed into `[scrubbed]`; symlinked artifact paths are refused. NOT covered: two or more NESTED
+encoding levels, partially- or mixed-encoded values, binary content (deleted outright - or kept loudly with
+`SCRUB_KEEP_BINARY=1`, which still fails the step), image pixels, and secrets shorter than 4 characters
+(the run fails instead of scrubbing). Auth/session state is written mode 0600 and the run fails when the
+state dir is not git-ignored (`templates/cache.ts`).

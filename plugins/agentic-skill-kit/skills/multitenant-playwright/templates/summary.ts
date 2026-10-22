@@ -190,3 +190,27 @@ export function columnsFromSummary(summary: Summary): MatrixColumn[] {
     return { tenantId: id, status: (t?.status ?? 'no-results').toUpperCase(), cases };
   });
 }
+
+/** Untrusted summary artifacts are capped: a huge file is a bug or an attack, never merged silently. */
+export const SUMMARY_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Minimal structural check for a summary file written by another job or process. */
+export function isSummaryShape(v: unknown): v is Summary {
+  if (typeof v !== 'object' || v === null) return false;
+  const s = v as Partial<Summary>;
+  return (
+    typeof s.runId === 'string' && typeof s.runStatus === 'string' &&
+    Array.isArray(s.expected) && typeof s.tenants === 'object' && s.tenants !== null
+  );
+}
+
+/** Parse an untrusted summary artifact: rejects oversized files and anything without the expected shape. */
+export function parseSummary(body: { size: number; text: string }): Summary | undefined {
+  if (body.size > SUMMARY_MAX_BYTES) return undefined;
+  try {
+    const parsed = JSON.parse(body.text) as unknown;
+    return isSummaryShape(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}

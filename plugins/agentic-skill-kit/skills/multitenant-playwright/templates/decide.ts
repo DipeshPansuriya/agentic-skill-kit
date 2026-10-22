@@ -58,3 +58,24 @@ export const toKeyedMatrix = (tenants: readonly DecideTenant[]): string =>
       tenants.map((t) => [t.id.replace(/-/g, '_'), { tenant: t.id, timeout: String(t.timeoutMinutes), credentialsSecret: t.credentialsSecret }]),
     ),
   );
+
+/** A CLI-supplied repo-relative path is either usable or refused with a reason (CLI: usage error, exit 2). */
+export type SafePath = { ok: true; path: string } | { ok: false; reason: string };
+
+/**
+ * Resolve a CLI-supplied repo-relative path against repoRoot. Absolute paths (POSIX /, UNC \, drive C:),
+ * parent traversal (".." segments) and empty results are REFUSED, so a config file like --schedule-map can
+ * never point outside the repo. Pure string logic; the caller decides the exit code.
+ */
+export function safeRepoRelativePath(input: string, repoRoot: string): SafePath {
+  const trimmed = input.trim().replace(/^['"]|['"]$/g, '');
+  if (trimmed === '') return { ok: false, reason: 'empty path' };
+  const low = trimmed.toLowerCase();
+  if (low.startsWith('/') || low.startsWith('\\\\') || /^[a-z]:/.test(low)) return { ok: false, reason: `absolute path refused: "${trimmed}"` };
+  const parts = trimmed.split(/[\\/]/).filter((p) => p !== '' && p !== '.');
+  if (parts.length === 0) return { ok: false, reason: `"${trimmed}" resolves to nothing` };
+  if (parts.some((p) => p === '..')) return { ok: false, reason: `parent traversal refused: "${trimmed}"` };
+  const root = repoRoot.replace(/[\\/]+$/, '');
+  const sep = root.includes('\\') ? '\\' : '/';
+  return { ok: true, path: [root, ...parts].join(sep) };
+}

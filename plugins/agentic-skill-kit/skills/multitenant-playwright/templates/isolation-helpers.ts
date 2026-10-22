@@ -48,3 +48,26 @@ export function tryParseId(text: string): string | undefined {
     return undefined;
   }
 }
+
+/**
+ * PRODUCTION GUARD (destructive isolation checks are staging-only): the isolation spec refuses to run unless
+ * every involved base host is on the non-production allowlist TENANT_ISOLATION_ALLOWED_HOSTS (comma list of
+ * host[:port]). Returns undefined when the run is allowed, otherwise the reason to skip with.
+ */
+export function isolationHostGuard(baseUrls: readonly string[], allowlist: readonly string[]): string | undefined {
+  if (allowlist.length === 0) {
+    return 'TENANT_ISOLATION_ALLOWED_HOSTS is empty: destructive isolation checks are staging-only and refuse to run';
+  }
+  const allowed = new Set(allowlist.map((h) => h.trim().toLowerCase()));
+  const hostOf = (url: string): string => {
+    try {
+      return new URL(url).host.toLowerCase();
+    } catch {
+      return '<bad-url>';
+    }
+  };
+  const rejected = [...new Set(baseUrls.map(hostOf))].filter((h) => !allowed.has(h));
+  return rejected.length === 0
+    ? undefined
+    : `base host(s) ${rejected.join(', ')} are not on the TENANT_ISOLATION_ALLOWED_HOSTS non-production allowlist`;
+}

@@ -46,3 +46,12 @@ Publish results as artifacts (or to a results branch/storage), **not** by commit
 
 ## Adding a tenant must be one edit
 If a new tenant needs YAML parameters, a template call, `dependsOn` and `--job` edits, the matrix is hand-written. Derive it from the registry, then add the contract test that proves it.
+
+## Session-state hygiene
+
+- Auth/session cache files are tenant- and role-keyed under `STATE_DIR` and written with mode 0600
+  (`fs.chmodSync` after the write: `templates/auth.setup.ts` after `storageState()`, `templates/cache.ts:writePrivate`).
+  Role names get the same safe-slug check as tenant ids (`templates/cache.ts`).
+- `assertStateDirsGitignored()` runs at setup start: it reads the `.gitignore` chain from the state dir upward
+  and FAILS the run when `STATE_DIR` or `REPORT_DIR` would be committed - stored sessions are live secrets.
+  The matcher is deliberately simple (negation and mid-path `**` patterns are treated leniently; verify).

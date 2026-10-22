@@ -31,6 +31,10 @@ Required patterns, UI and API:
 9. **Role boundary inside a tenant** (a read-only role cannot write) as the neighbouring check.
 
 Rules:
+- Production guard (staging-only): the isolation spec refuses to run unless every involved base host is
+  on `TENANT_ISOLATION_ALLOWED_HOSTS` (comma list of `host[:port]`); without the variable, or with a host
+  missing from it, it SKIPS with that reason. Destructive isolation checks therefore never touch production
+  by default - the allowlist env is the gate, not prose (`templates/isolation-helpers.ts:isolationHostGuard`).
 - Destructive calls (update, delete with the victim's id) run only after the read check proved the id does not resolve in the attacker tenant; with sequential ids the same number may be the attacker's own record, so prefer GUID ids and keep a canary record that must survive. Non-production data only. Prefer dedicated users and run isolation in its own job so its cleanup cannot disturb other specs.
 - A replay test builds Cookie/Authorization headers explicitly from the stored state (`templates/isolation-helpers.ts`): storage-state cookies are domain-scoped and an API context never sends local-storage tokens, so loading the state against another host sends nothing and passes vacuously. Always add a control request that must succeed on the home host.
 - Wait for a positive denied state in the UI (a not-found or access-denied message) before asserting a marker is absent.

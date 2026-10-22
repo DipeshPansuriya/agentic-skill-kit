@@ -3,8 +3,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { REPORT_DIR } from './cache';
 import { isolationPass } from './project-plan';
+import { safeSlugList } from './project-name';
 import { selectTenants } from './registry';
-import { columnsFromSummary, mergeSummaries, renderMatrix, verdict, type Summary } from './summary';
+import { columnsFromSummary, mergeSummaries, parseSummary, renderMatrix, verdict, type Summary } from './summary';
 
 /**
  * RUN POLICY for Model B (process per tenant), as ONE command:
@@ -32,14 +33,26 @@ if (passthrough.some((a) => a.startsWith('--reporter'))) {
   console.error('Do not pass --reporter: it would remove summary-reporter.ts. Configure reporters in playwright.config.ts.');
   process.exit(2);
 }
+// Only hand-picked flags may pass through to the children: anything else could disable the summary reporter,
+// change the output directory or re-run the wrong tests for every tenant process at once.
+const ALLOWED_PASSTHROUGH = new Set(['--parallel', '--headed', '--update-snippets']);
+const unexpected = passthrough.filter((a) => !ALLOWED_PASSTHROUGH.has(a));
+if (unexpected.length > 0) {
+  console.error(`Passthrough flags are limited to ${[...ALLOWED_PASSTHROUGH].join(' ')}; unexpected: ${unexpected.join(' ')}`);
+  process.exit(2);
+}
 
 /** One Playwright child. `label` names its report folder; `selection` is the TENANTS value; `modules` the module switches. */
 function runOne(
   label: string,
-  selection: string,
+  selection_: string,
   modules: { MODULES: string; EXCLUDE_MODULES: string },
   runId: string,
 ): Promise<{ tenantId: string; code: number }> {
+  // Tenants and tenant-modules land in child env and file paths: validate each entry as a safe slug.
+  const selection = safeSlugList('TENANTS', selection_).join(',');
+  safeSlugList('MODULES', modules.MODULES);
+  safeSlugList('EXCLUDE_MODULES', modules.EXCLUDE_MODULES);
   return new Promise((resolve) => {
     const child = spawn('npx', ['playwright', 'test', ...passthrough], {
       stdio: 'inherit',
@@ -103,9 +116,13 @@ async function main(): Promise<number> {
   for (const id of labels) {
     const file = path.join(REPORT_DIR, id, 'summary.json');
     try {
-      parts.push(JSON.parse(fs.readFileSync(file, 'utf8')) as Summary);
+      // Untrusted artifact: size-capped and shape-checked; an oversized or foreign file is a warning, not a merge.
+      const parsed = parseSummary({ size: fs.statSync(file).size, text: fs.readFileSync(file, 'utf8') });
+      if (parsed) parts.push(parsed);
+      else console.error(`summary rejected (over 5 MB or unexpected shape): ${file}`);
     } catch {
       // missing or unreadable: the tenant stays absent and verdict() reports "ran nothing"
+      console.error(`unreadable summary ignored: ${file}`);
     }
   }
   const merged = mergeSummaries(runId, expected, parts, true); // drops parts from another run id

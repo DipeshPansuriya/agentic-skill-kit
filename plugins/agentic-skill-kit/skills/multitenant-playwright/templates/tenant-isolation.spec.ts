@@ -1,7 +1,7 @@
 import { request, type APIRequestContext } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { authStatePath } from './cache';
-import { headersFromState, readState, tryParseId } from './isolation-helpers';
+import { headersFromState, isolationHostGuard, readState, tryParseId } from './isolation-helpers';
 import { getTenant, selectTenants } from './registry';
 
 /**
@@ -15,6 +15,8 @@ import { getTenant, selectTenants } from './registry';
  *  - destructive calls (PUT/DELETE with the victim's id) run only after the read check proved the id does not
  *    resolve in the attacker tenant; with sequential ids the same number could be the attacker's own record,
  *    so prefer GUID ids and keep a canary record that must survive. NON-PRODUCTION DATA ONLY;
+ *  - STAGING-ONLY: a host-allowlist guard skips this spec with a reason unless every involved base host is
+ *    on TENANT_ISOLATION_ALLOWED_HOSTS: destructive isolation checks never run against production by default;
  *  - the same key in two tenants is two different records;
  *  - a replayed session is built from explicit Cookie / Authorization headers, with a control request that
  *    proves the headers work on the home host (otherwise the replay assertion would pass vacuously);
@@ -23,7 +25,18 @@ import { getTenant, selectTenants } from './registry';
  * (TENANTS=a,b MODULES=isolation). Per-tenant jobs exclude this module (EXCLUDE_MODULES=isolation).
  * Prefer dedicated test users for this module so cleanup cannot disturb other specs.
  */
-const VICTIMS = selectTenants(process.env.TENANTS).map((t) => t.id);
+const ATTACKERS = selectTenants(process.env.TENANTS);
+const VICTIMS = ATTACKERS.map((t) => t.id);
+/**
+ * PRODUCTION GUARD (staging-only): destructive isolation checks must never point at production. The spec
+ * refuses (skips with a reason) unless every involved base host is on TENANT_ISOLATION_ALLOWED_HOSTS
+ * (comma list of host[:port]). See references/isolation.md.
+ */
+const ALLOWED_HOSTS = (process.env.TENANT_ISOLATION_ALLOWED_HOSTS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+const HOST_REJECT = isolationHostGuard(
+  [...new Set([...ATTACKERS.map((t) => t.baseUrl), ...VICTIMS.map((id) => getTenant(id).baseUrl)])],
+  ALLOWED_HOSTS,
+);
 const DENIED = [403, 404];
 
 async function apiAs(sessionOf: string, hostOf: string = sessionOf): Promise<APIRequestContext> {
@@ -50,7 +63,8 @@ for (const victimId of VICTIMS) {
   test.describe(`attacker cannot reach tenant ${victimId}`, () => {
     test('read, list, update and delete are denied and nothing leaks', async ({ ctx }) => {
       const { tenant, page } = ctx;
-      test.skip(victimId === tenant.id, 'not a cross-tenant pair'); // the only legitimate skip, with a reason
+      test.skip(victimId === tenant.id, 'not a cross-tenant pair');
+      test.skip(HOST_REJECT !== undefined, HOST_REJECT ? `isolation production guard: ${HOST_REJECT}` : ''); // the only legitimate skip, with a reason
 
       const mine = await apiAs(tenant.id);
       const theirs = await apiAs(victimId);
@@ -100,6 +114,7 @@ for (const victimId of VICTIMS) {
 
     test('a session replayed on the victim host is rejected (with a working control)', async ({ tenant }) => {
       test.skip(victimId === tenant.id, 'not a cross-tenant pair');
+      test.skip(HOST_REJECT !== undefined, HOST_REJECT ? `isolation production guard: ${HOST_REJECT}` : '');
       const headers = headersFromState(readState(authStatePath(tenant.id, 'operator'))); // Verify token key
       const home = await request.newContext({ baseURL: tenant.baseUrl, extraHTTPHeaders: headers });
       const away = await request.newContext({ baseURL: getTenant(victimId).baseUrl, extraHTTPHeaders: headers });
@@ -117,6 +132,7 @@ for (const victimId of VICTIMS) {
     test('the same natural key in two tenants is two different records', async ({ ctx }) => {
       const { tenant } = ctx;
       test.skip(victimId === tenant.id, 'not a cross-tenant pair');
+      test.skip(HOST_REJECT !== undefined, HOST_REJECT ? `isolation production guard: ${HOST_REJECT}` : '');
       const key = ctx.unique('shared-key'); // identical value written to both tenants
       const mine = await apiAs(tenant.id);
       const theirs = await apiAs(victimId);
